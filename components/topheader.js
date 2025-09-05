@@ -10,13 +10,12 @@ export function renderTopHeader(container) {
             left: 0;
             width: 100%;
             height: 60px;
-            /* --- CHANGE: Matched to main background color --- */
             background-color: var(--background-color);
             display: flex;
             align-items: center;
             padding: 0 15px;
             z-index: 1000;
-            border-bottom: 1px solid var(--border-color);
+            /* --- CHANGE: Removed the border-bottom for a blended look --- */
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         }
         .logo-container {
