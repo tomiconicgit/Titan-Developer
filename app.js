@@ -1,9 +1,11 @@
 import { renderDashboard } from './pages/dashboard.js';
 import { renderTitanZipPage } from './tools/titanzip.js';
-// Import the new menu component
 import { renderMenu } from './components/menu.js';
+// Import the new header component
+import { renderHeader } from './components/header.js';
 
-// Get the main containers from the DOM
+// Get all the main containers from the DOM
+const headerContainer = document.getElementById('header-container');
 const menuContainer = document.getElementById('menu-container');
 const pageContainer = document.getElementById('page-container');
 
@@ -14,11 +16,9 @@ const pageContainer = document.getElementById('page-container');
 function navigateTo(page) {
     pageContainer.innerHTML = '';
     
-    // The menu is persistent, so we don't re-render it on navigation.
-    // We navigate back to the dashboard by default if the page is 'dashboard'.
     if (page === 'dashboard') {
         renderDashboard(pageContainer, navigateTo);
-        return; // Early exit to prevent falling through the switch
+        return;
     }
 
     switch (page) {
@@ -32,6 +32,8 @@ function navigateTo(page) {
 }
 
 // Initial render
+// The header needs the page container to attach its scroll listener
+renderHeader(headerContainer, pageContainer); 
 renderMenu(menuContainer, navigateTo);
 navigateTo('dashboard');
 
