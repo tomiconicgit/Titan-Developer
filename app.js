@@ -1,25 +1,27 @@
 import { renderDashboard } from './pages/dashboard.js';
 import { renderTitanZipTool } from './tools/titanzip.js';
 import { renderTopHeader } from './components/topheader.js';
+import { renderNavBar } from './components/navbar.js';
 
-// Get references to the new containers
+// Get references to all containers
 const headerContainer = document.getElementById('header-container');
+const navbarContainer = document.getElementById('navbar-container');
 const pageContainer = document.getElementById('page-container');
 
 /**
- * A simple client-side router to switch between views.
- * It now clears and renders content only within the page container,
- * leaving the header untouched.
+ * The main router. It now re-renders the navbar on each navigation
+ * to update the 'active' state of the links.
  * @param {string} page - The name of the page to render.
  */
 function navigateTo(page) {
-    // Clear only the page container
+    // 1. Re-render the navbar, passing the new page name to set the active link
+    renderNavBar(navbarContainer, navigateTo, page);
+    
+    // 2. Clear and render the page content
     pageContainer.innerHTML = '';
-
-    // Render the requested page into the page container
     switch (page) {
         case 'titanzip':
-            renderTitanZipTool(pageContainer, navigateTo);
+            renderTitanZipTool(pageContainer);
             break;
         case 'dashboard':
         default:
@@ -30,10 +32,10 @@ function navigateTo(page) {
 
 // Main application startup logic
 window.addEventListener('DOMContentLoaded', () => {
-    // 1. Render the persistent header
+    // Render the persistent top header once
     renderTopHeader(headerContainer);
 
-    // 2. Navigate to the initial page (dashboard)
+    // Navigate to the initial page (dashboard)
     navigateTo('dashboard');
 });
 
