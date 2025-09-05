@@ -1,58 +1,106 @@
 /**
- * Renders the fixed global header for the application.
- * @param {HTMLElement} container - The DOM element to render the header into.
+ * Renders a horizontally-scrolling navigation bar with icons.
+ * @param {HTMLElement} container - The DOM element to render the navbar into.
+ * @param {function} navigate - The main navigation function from app.js.
+ * @param {string} currentPage - The name of the currently active page to highlight.
  */
-export function renderTopHeader(container) {
-    const headerStyles = `
-        .app-header {
+export function renderNavBar(container, navigate, currentPage) {
+    const navStyles = `
+        .nav-scroller {
             position: fixed;
-            top: 0;
+            top: 60px; /* Position directly below the 60px main header */
             left: 0;
             width: 100%;
-            height: 60px;
             /* --- CHANGE: Matched to main background color --- */
             background-color: var(--background-color);
-            display: flex;
-            align-items: center;
-            padding: 0 15px;
-            z-index: 1000;
+            z-index: 999;
             border-bottom: 1px solid var(--border-color);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            padding: 0 15px;
+            overflow-x: auto; /* Enables horizontal scrolling */
+            white-space: nowrap; /* Prevents items from wrapping */
         }
-        .logo-container {
+        .nav-scroller::-webkit-scrollbar {
+            display: none; /* Hide scrollbar for a cleaner look */
+        }
+        .nav-list {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
+            height: 48px;
         }
-        .logo-svg {
-            width: 32px;
-            height: 32px;
+        .nav-item {
+            display: flex; /* Use flexbox to align icon and text */
+            align-items: center;
+            gap: 8px; /* Space between icon and text */
+            padding: 8px 16px;
+            border-radius: 8px;
+            color: var(--secondary-text-color);
+            font-size: 0.9em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
         }
-        .app-title {
-            font-size: 1.1em;
-            font-weight: 700; /* Bold weight */
+        .nav-item.active {
             color: var(--primary-text-color);
-            letter-spacing: 0.5px;
+            background-color: #333; /* Active state background remains a contrast color */
+        }
+        .nav-item svg {
+            width: 16px; /* Icon size */
+            height: 16px;
+        }
+        .nav-item .icon-dashboard {
+            fill: #FFA500; /* Orange */
+        }
+        .nav-item .icon-titip {
+            fill: var(--accent-color); /* Blue from the app's theme */
         }
     `;
 
-    // Inject the component's styles into the document head
+    // Inject the component's styles
     const styleElement = document.createElement('style');
-    styleElement.textContent = headerStyles;
+    styleElement.textContent = navStyles;
     document.head.appendChild(styleElement);
 
-    // Render the header's HTML structure
+    // Define the navigation links
+    const navLinks = [
+        { 
+            id: 'dashboard', 
+            text: 'Dashboard',
+            svg: `<svg class="icon-dashboard" viewBox="0 0 24 24"><path d="M3 3h8v8H3V3zm0 10h8v8H3v-8zM13 3h8v8h-8V3zm0 10h8v8h-8v-8z"/></svg>`
+        },
+        { 
+            id: 'titanzip', 
+            text: 'Titan Zip',
+            svg: `<svg class="icon-titanzip" viewBox="0 0 24 24"><path d="M18 4V2h-4v2h-2V2h-4v2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2h-4zm-2 2h-2v2h2v2h-2v2h2v2h-2v-2h-2v2h-2v-2h2v-2h-2v-2h2V6h-2V4h2v2h2V4h2v2z"/></svg>`
+        },
+    ];
+
+    // Build the HTML for the navigation items
+    const linksHTML = navLinks.map(link => `
+        <div class="nav-item ${currentPage === link.id ? 'active' : ''}" data-page="${link.id}">
+            ${link.svg}
+            <span>${link.text}</span>
+        </div>
+    `).join('');
+    
+    // Render the navbar structure
     container.innerHTML = `
-        <header class="app-header">
-            <div class="logo-container">
-                <svg class="logo-svg" viewBox="0 0 512 512">
-                    <path fill="#FFFFFF" d="M256 0C167.4 0 96 71.4 96 160v128h320V160C416 71.4 344.6 0 256 0z M128 416h256v32H128v-32zm-32-64h320v32H96v-32zm-32-64h384v32H64v-32z"/>
-                    <path fill="#FFFFFF" d="M64 480h384v32H64z"/>
-                </svg>
-                <span class="app-title">Titan Developer</span>
+        <nav class="nav-scroller">
+            <div class="nav-list">
+                ${linksHTML}
             </div>
-        </header>
+        </nav>
     `;
+
+    // Add event listeners to the navigation items
+    container.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            const page = e.currentTarget.dataset.page;
+            if (page) {
+                navigate(page);
+            }
+        });
+    });
 }
 
 
