@@ -2,61 +2,43 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PWA Tools Hub</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Titan Developer</title>
     <style>
         :root {
-            --background-color: #121212;
+            --background-color: #000000;
             --surface-color: #1e1e1e;
-            --primary-text-color: #e0e0e0;
+            --primary-text-color: #ffffff;
             --secondary-text-color: #a0a0a0;
             --accent-color: #007AFF;
             --border-color: #333333;
         }
-
-        * {
+        body, html {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-        }
-
-        html, body {
             width: 100%;
             height: 100%;
-            overflow: hidden;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--background-color);
             color: var(--primary-text-color);
         }
-
-        #app {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-        
         #page-container {
-            flex-grow: 1;
-            overflow-y: auto;
-            /* IMPORTANT: Pushes content down below BOTH fixed headers */
-            /* 60px (header) + 48px (navbar) = 108px */
-            padding-top: 108px;
+            /* Adjust padding to account for the new combined navbar height (50px + 48px) */
+            padding-top: 98px;
         }
     </style>
 </head>
 <body>
-    <div id="app">
-        <div id="header-container"></div>
-        <!-- New dedicated container for the navigation bar -->
-        <div id="navbar-container"></div>
-        <div id="page-container"></div>
-    </div>
+    <!-- The single container for the new unified navigation bar -->
+    <div id="nav-container"></div>
+    
+    <!-- The container for all switchable page content -->
+    <div id="page-container"></div>
 
+    <!-- External library for zip/unzip functionality -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    
+    <!-- Main application script -->
     <script type="module" src="app.js"></script>
 </body>
 </html>
