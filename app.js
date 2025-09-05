@@ -1,9 +1,10 @@
 import { renderDashboard } from './pages/dashboard.js';
-// Correctly imports the function from the self-contained tool module
 import { renderTitanZipPage } from './tools/titanzip.js';
-import { renderNavBar } from './components/navbar.js';
+// Import the new menu component
+import { renderMenu } from './components/menu.js';
 
-const navContainer = document.getElementById('nav-container');
+// Get the main containers from the DOM
+const menuContainer = document.getElementById('menu-container');
 const pageContainer = document.getElementById('page-container');
 
 /**
@@ -11,22 +12,27 @@ const pageContainer = document.getElementById('page-container');
  * @param {string} page - The key of the page to navigate to.
  */
 function navigateTo(page) {
-    renderNavBar(navContainer, navigateTo, page);
     pageContainer.innerHTML = '';
+    
+    // The menu is persistent, so we don't re-render it on navigation.
+    // We navigate back to the dashboard by default if the page is 'dashboard'.
+    if (page === 'dashboard') {
+        renderDashboard(pageContainer, navigateTo);
+        return; // Early exit to prevent falling through the switch
+    }
 
     switch (page) {
         case 'titanzip':
-            // The function call is now simpler and correct
             renderTitanZipPage(pageContainer);
             break;
-        case 'dashboard':
         default:
             renderDashboard(pageContainer, navigateTo);
             break;
     }
 }
 
-// Initial load: navigate to the dashboard
+// Initial render
+renderMenu(menuContainer, navigateTo);
 navigateTo('dashboard');
 
 
