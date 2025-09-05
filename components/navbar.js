@@ -46,7 +46,15 @@ export function renderNavBar(container, navigate, currentPage) {
         .nav-item svg {
             width: 16px; /* Icon size */
             height: 16px;
-            fill: currentColor; /* Makes SVG color match the text color */
+            /* The general 'fill: currentColor' is removed to allow for specific colors. */
+        }
+
+        /* --- NEW: Specific colors for each icon --- */
+        .nav-item .icon-dashboard {
+            fill: #FFA500; /* Orange */
+        }
+        .nav-item .icon-titanzip {
+            fill: var(--accent-color); /* Blue from the app's theme */
         }
     `;
 
@@ -55,19 +63,19 @@ export function renderNavBar(container, navigate, currentPage) {
     styleElement.textContent = navStyles;
     document.head.appendChild(styleElement);
 
-    // Define the navigation links, now with SVG icons
+    // Define the navigation links, now with SVG icons that have classes for coloring
     const navLinks = [
         { 
             id: 'dashboard', 
             text: 'Dashboard',
-            // SVG icon for Dashboard (grid layout)
-            svg: `<svg viewBox="0 0 24 24"><path d="M3 3h8v8H3V3zm0 10h8v8H3v-8zM13 3h8v8h-8V3zm0 10h8v8h-8v-8z"/></svg>`
+            // Added class="icon-dashboard"
+            svg: `<svg class="icon-dashboard" viewBox="0 0 24 24"><path d="M3 3h8v8H3V3zm0 10h8v8H3v-8zM13 3h8v8h-8V3zm0 10h8v8h-8v-8z"/></svg>`
         },
         { 
             id: 'titanzip', 
             text: 'Titan Zip',
-            // SVG icon for Titan Zip (zipper)
-            svg: `<svg viewBox="0 0 24 24"><path d="M18 4V2h-4v2h-2V2h-4v2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-4zm-2 2h-2v2h2v2h-2v2h2v2h-2v-2h-2v2h-2v-2h2v-2h-2v-2h2V6h-2V4h2v2h2V4h2v2z"/></svg>`
+            // Added class="icon-titanzip"
+            svg: `<svg class="icon-titanzip" viewBox="0 0 24 24"><path d="M18 4V2h-4v2h-2V2h-4v2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2h-4zm-2 2h-2v2h2v2h-2v2h2v2h-2v-2h-2v2h-2v-2h2v-2h-2v-2h2V6h-2V4h2v2h2V4h2v2z"/></svg>`
         },
         // ... more tools will be added here
     ];
