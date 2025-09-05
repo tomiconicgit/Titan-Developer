@@ -1,27 +1,28 @@
 import { renderDashboard } from './pages/dashboard.js';
-import { renderTitanZipTool } from './tools/titanzip.js';
-import { renderTopHeader } from './components/topheader.js';
+import { renderTitanZipPage } from './tools/titanzip.js';
+// We only need to import the new unified navbar
 import { renderNavBar } from './components/navbar.js';
 
-// Get references to all containers
-const headerContainer = document.getElementById('header-container');
-const navbarContainer = document.getElementById('navbar-container');
+// Get the main containers from the DOM
+const navContainer = document.getElementById('nav-container');
 const pageContainer = document.getElementById('page-container');
 
 /**
- * The main router. It now re-renders the navbar on each navigation
- * to update the 'active' state of the links.
- * @param {string} page - The name of the page to render.
+ * Main navigation function. Clears the page and renders the new content.
+ * It also re-renders the navbar to update the 'active' state.
+ * @param {string} page - The key of the page to navigate to.
  */
 function navigateTo(page) {
-    // 1. Re-render the navbar, passing the new page name to set the active link
-    renderNavBar(navbarContainer, navigateTo, page);
+    // Re-render the navbar on every navigation to update the active link
+    renderNavBar(navContainer, navigateTo, page);
     
-    // 2. Clear and render the page content
+    // Clear the current page content
     pageContainer.innerHTML = '';
+
+    // Render the selected page
     switch (page) {
         case 'titanzip':
-            renderTitanZipTool(pageContainer);
+            renderTitanZipPage(pageContainer, navigateTo);
             break;
         case 'dashboard':
         default:
@@ -30,13 +31,7 @@ function navigateTo(page) {
     }
 }
 
-// Main application startup logic
-window.addEventListener('DOMContentLoaded', () => {
-    // Render the persistent top header once
-    renderTopHeader(headerContainer);
-
-    // Navigate to the initial page (dashboard)
-    navigateTo('dashboard');
-});
+// Initial load: navigate to the dashboard
+navigateTo('dashboard');
 
 
