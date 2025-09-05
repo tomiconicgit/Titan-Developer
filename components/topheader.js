@@ -10,12 +10,12 @@ export function renderTopHeader(container) {
             left: 0;
             width: 100%;
             height: 60px;
-            background-color: var(--surface-color);
+            /* --- CHANGE: Matched to main background color --- */
+            background-color: var(--background-color);
             display: flex;
             align-items: center;
             padding: 0 15px;
             z-index: 1000;
-            /* --- FIX: Using both a border and a shadow for robust styling --- */
             border-bottom: 1px solid var(--border-color);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         }
@@ -41,12 +41,11 @@ export function renderTopHeader(container) {
     styleElement.textContent = headerStyles;
     document.head.appendChild(styleElement);
 
-    // Render the header's HTML structure with the corrected SVG path data
+    // Render the header's HTML structure
     container.innerHTML = `
         <header class="app-header">
             <div class="logo-container">
                 <svg class="logo-svg" viewBox="0 0 512 512">
-                    <!-- Corrected SVG data -->
                     <path fill="#FFFFFF" d="M256 0C167.4 0 96 71.4 96 160v128h320V160C416 71.4 344.6 0 256 0z M128 416h256v32H128v-32zm-32-64h320v32H96v-32zm-32-64h384v32H64v-32z"/>
                     <path fill="#FFFFFF" d="M64 480h384v32H64z"/>
                 </svg>
