@@ -68,13 +68,12 @@ class TitanZip {
 
 /**
  * Renders the TitanZip tool UI and functionality into a container.
+ * The navigate function is no longer needed here as the navbar handles all navigation.
  * @param {HTMLElement} container - The DOM element to render the tool into.
- * @param {function} navigate - The navigation function from app.js to switch pages.
  */
-export function renderTitanZipTool(container, navigate) {
+export function renderTitanZipTool(container) {
     const toolStyles = `
         .tool-container { padding: 20px 15px; display: flex; flex-direction: column; gap: 20px; max-width: 600px; margin: 0 auto; }
-        .back-button { background: none; border: none; color: var(--accent-color); font-size: 1em; cursor: pointer; text-align: left; padding: 0 0 10px 0; }
         h1 { font-size: 1.8em; font-weight: 600; text-align: center; }
         input[type="file"] { display: none; }
         .file-upload-label { display: block; padding: 15px 20px; background-color: var(--surface-color); border: 2px dashed var(--border-color); border-radius: 12px; text-align: center; cursor: pointer; transition: background-color 0.2s, border-color 0.2s; font-weight: 500; }
@@ -94,7 +93,7 @@ export function renderTitanZipTool(container, navigate) {
 
     container.innerHTML = `
         <div class="tool-container">
-            <button class="back-button">&larr; Back to Dashboard</button>
+            <!-- Back button has been removed, as the new navbar handles global navigation -->
             <h1>Titan Zip</h1>
             <label for="upload" class="file-upload-label">Choose a .zip file</label>
             <input type="file" id="upload" accept=".zip">
@@ -117,8 +116,6 @@ export function renderTitanZipTool(container, navigate) {
     const progressDiv = container.querySelector('#progress');
     const progressBar = container.querySelector('#progress-bar');
     
-    container.querySelector('.back-button').addEventListener('click', () => navigate('dashboard'));
-
     uploadInput.addEventListener('change', (e) => {
         selectedFile = e.target.files[0];
         if (selectedFile) {
@@ -164,4 +161,5 @@ export function renderTitanZipTool(container, navigate) {
         }
     });
 }
+
 
