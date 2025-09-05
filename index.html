@@ -24,7 +24,7 @@
         html, body {
             width: 100%;
             height: 100%;
-            overflow: hidden; /* Prevent body scroll */
+            overflow: hidden;
         }
 
         body {
@@ -41,17 +41,19 @@
         }
         
         #page-container {
-            flex-grow: 1; /* Take up remaining space */
-            overflow-y: auto; /* Allow pages to scroll independently */
-            padding-top: 60px; /* IMPORTANT: Prevents content from being hidden under the fixed header */
+            flex-grow: 1;
+            overflow-y: auto;
+            /* IMPORTANT: Pushes content down below BOTH fixed headers */
+            /* 60px (header) + 48px (navbar) = 108px */
+            padding-top: 108px;
         }
     </style>
 </head>
 <body>
     <div id="app">
-        <!-- New dedicated container for the global header -->
         <div id="header-container"></div>
-        <!-- Container for all page content that will be swapped out -->
+        <!-- New dedicated container for the navigation bar -->
+        <div id="navbar-container"></div>
         <div id="page-container"></div>
     </div>
 
