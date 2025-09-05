@@ -13,6 +13,10 @@
             --accent-color: #007AFF;
             --border-color: #333333;
         }
+        /* --- FIX: Global box-sizing rule --- */
+        * {
+            box-sizing: border-box;
+        }
         body, html {
             margin: 0;
             padding: 0;
@@ -21,25 +25,27 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--background-color);
             color: var(--primary-text-color);
+            overflow: hidden; /* Prevent the body from scrolling */
         }
-        /* No padding needed as the menu button is a fixed overlay */
         #page-container {
             width: 100%;
             height: 100%;
+            overflow-y: auto; /* This container is now the scrolling element */
+            padding-top: 70px; /* Space for the fixed header */
         }
     </style>
 </head>
 <body>
+    <!-- Container for the new slim header bar -->
+    <div id="header-container"></div>
+    
     <!-- Container for the menu button and its overlay -->
     <div id="menu-container"></div>
     
-    <!-- Container for all switchable page content -->
+    <!-- This container now scrolls its content -->
     <div id="page-container"></div>
 
-    <!-- External library for zip/unzip functionality -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    
-    <!-- Main application script -->
     <script type="module" src="app.js"></script>
 </body>
 </html>
