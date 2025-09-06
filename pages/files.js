@@ -1,17 +1,18 @@
 /**
- * Renders the File Manager page.
+ * Renders the File Manager page, redesigned based on visual references.
  * @param {HTMLElement} container - The DOM element to render the page into.
  * @param {function} navigate - The main navigation function.
  */
 export function renderFilesPage(container, navigate) {
-    // --- MOCK DATA ---
+    // --- MOCK DATA with metadata ---
     const files = [
-        { name: 'index.html', type: 'html' }, { name: 'styles.css', type: 'css' },
-        { name: 'app.js', type: 'js' }, { name: 'Project Brief', type: 'folder' },
-        { name: 'notes.txt', type: 'txt' }, { name: 'image-assets', type: 'folder' },
-        { name: 'README.md', type: 'md' }, { name: 'package.json', type: 'json' },
-        { name: 'logo.svg', type: 'svg' }, { name: 'api.py', type: 'py' },
-        { name: 'server.java', type: 'java' }, { name: 'data-proc', type: 'folder' },
+        { name: 'Project Assets', type: 'folder', meta: '12 items' },
+        { name: 'index.html', type: 'html', meta: 'Sep 5, 2025' },
+        { name: 'manifest.json', type: 'json', meta: 'Sep 5, 2025' },
+        { name: 'styles.css', type: 'css', meta: 'Sep 4, 2025' },
+        { name: 'app.js', type: 'js', meta: 'Sep 5, 2025' },
+        { name: 'notes.txt', type: 'txt', meta: 'Aug 30, 2025' },
+        { name: 'service-worker.js', type: 'js', meta: 'Sep 2, 2025' },
     ];
 
     // --- STYLES ---
@@ -30,54 +31,56 @@ export function renderFilesPage(container, navigate) {
 
         .file-grid {
             display: grid;
-            /* --- CHANGE: 4 columns across --- */
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
+            /* --- CHANGE: 3 columns with more spacing --- */
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px 15px; /* More vertical gap */
         }
-        .file-card {
-            /* --- CHANGE: Glassmorphic Container --- */
-            background-color: rgba(30, 30, 30, 0.65);
-            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(128, 128, 128, 0.2);
-            border-radius: 16px;
-            padding: 10px;
+        .file-item {
             text-align: center;
-            /* --- CHANGE: Drop Shadow --- */
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
-        .file-icon-container {
-            position: relative; /* For positioning the text initials */
+        .file-icon-wrapper {
+            position: relative;
             width: 100%;
             aspect-ratio: 1 / 1;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            margin-bottom: 10px;
         }
-        .file-icon-svg {
+        .file-icon-base {
             width: 100%;
             height: 100%;
         }
-        .file-type-initials {
+        /* The colored label overlay for files */
+        .file-type-label {
             position: absolute;
-            top: 55%; /* Vertically center the text inside the icon */
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 0.8em;
-            font-weight: bold;
+            bottom: 25%;
+            left: 10%;
+            right: 10%;
+            padding: 4px 0;
+            border-radius: 4px;
+            font-size: 1.2em;
+            font-weight: 600;
             color: white;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            text-transform: uppercase;
         }
         
-        /* --- CHANGE: Icon Color Classes (applied to SVG) --- */
-        .icon-folder-color { fill: #0091EA; }
-        .icon-js-color { fill: #F7DF1E; }
-        .icon-html-color { fill: #E34F26; }
-        .icon-css-color { fill: #1572B6; }
-        .icon-txt-color { fill: #8A2BE2; }
-        .icon-default-color { fill: #6c757d; }
+        /* Label colors based on user's original request */
+        .label-js { background-color: #F0A500; } /* Orange */
+        .label-html { background-color: #E34F26; } /* HTML5 Orange/Red */
+        .label-css { background-color: #1572B6; } /* CSS Blue */
+        .label-txt { background-color: #8A2BE2; } /* Purple */
+        .label-json { background-color: #5E5E5E; } /* Grey */
+        .label-default { background-color: #6c757d; }
 
-        .file-name { font-size: 0.75em; color: #d1d1d1; word-break: break-all; }
+        .file-name {
+            font-size: 0.9em;
+            color: #e3e3e3;
+            font-weight: 500;
+            margin: 0;
+        }
+        .file-meta {
+            font-size: 0.8em;
+            color: var(--secondary-text-color);
+            margin-top: 4px;
+        }
     `;
 
     const styleElement = document.createElement('style');
@@ -90,7 +93,7 @@ export function renderFilesPage(container, navigate) {
             <div class="top-controls">
                 <div class="search-bar">
                     <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                    <input type="text" class="search-input" placeholder="Search files...">
+                    <input type="text" class="search-input" placeholder="Search...">
                 </div>
                 <div class="filter-button">
                     <svg viewBox="0 0 24 24"><path d="M3 18h6v-2H3v2zM3 6v2h18V6H3zm0 7h12v-2H3v2z"/></svg>
@@ -104,57 +107,43 @@ export function renderFilesPage(container, navigate) {
 }
 
 /**
- * Generates the HTML for a single file or folder item.
+ * Generates the HTML for a single file or folder item in the new style.
  * @param {object} file - The file or folder data.
  * @returns {string} The HTML string for the item.
  */
 function createFileItem(file) {
-    const fileIconSVG = `<svg class="file-icon-svg" viewBox="0 0 100 120"><path d="M85 25 L85 110 C85 115.523 80.523 120 75 120 L25 120 C19.477 120 15 115.523 15 110 L15 10 C15 4.477 19.477 0 25 0 L60 0 Z M65 5 L65 30 C65 32.761 67.239 35 70 35 L95 35 Z" /></svg>`;
-    const folderIconSVG = `<svg class="file-icon-svg" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`;
+    const baseFileIcon = `<svg class="file-icon-base" viewBox="0 0 80 100" fill="#E0E0E0"><path d="M65 0H15C6.7 0 0 6.7 0 15v70C0 93.3 6.7 100 15 100h50c8.3 0 15-6.7 15-15V25L55 0z"/></svg>`;
+    const folderIcon = `<svg class="file-icon-base" viewBox="0 0 96 96" fill="#1E88E5"><path d="M82.3 27.8H48.8L39.3 16H13.7C9.5 16 6 19.5 6 23.7V77.3C6 81.5 9.5 85 13.7 85H82.3c4.2 0 7.7-3.5 7.7-7.7V35.5c0-4.2-3.5-7.7-7.7-7.7z"/></svg>`;
 
-    let iconColorClass = '';
-    let iconContent = '';
-    let initials = '';
+    let iconHtml = '';
+    
+    if (file.type === 'folder') {
+        iconHtml = folderIcon;
+    } else {
+        const fileTypes = {
+            js: { label: 'js', class: 'label-js' },
+            html: { label: 'html', class: 'label-html' },
+            css: { label: 'css', class: 'label-css' },
+            txt: { label: 'txt', class: 'label-txt' },
+            json: { label: 'json', class: 'label-json' },
+        };
+        const typeInfo = fileTypes[file.type] || { label: file.type, class: 'label-default' };
 
-    switch (file.type) {
-        case 'folder':
-            iconColorClass = 'icon-folder-color';
-            iconContent = folderIconSVG;
-            break;
-        case 'js':
-            iconColorClass = 'icon-js-color';
-            initials = 'JS';
-            break;
-        case 'html':
-            iconColorClass = 'icon-html-color';
-            initials = 'HTML';
-            break;
-        case 'css':
-            iconColorClass = 'icon-css-color';
-            initials = 'CSS';
-            break;
-        case 'txt':
-            iconColorClass = 'icon-txt-color';
-            initials = 'TXT';
-            break;
-        default:
-            iconColorClass = 'icon-default-color';
-            initials = file.type.toUpperCase().substring(0, 4);
-            break;
-    }
-
-    // If it's a file (not a folder), set the standard file icon
-    if (file.type !== 'folder') {
-        iconContent = fileIconSVG;
+        iconHtml = `
+            ${baseFileIcon}
+            <div class="file-type-label ${typeInfo.class}">
+                ${typeInfo.label}
+            </div>
+        `;
     }
 
     return `
-        <div class="file-card">
-            <div class="file-icon-container">
-                <div class="${iconColorClass}">${iconContent}</div>
-                ${initials ? `<span class="file-type-initials">${initials}</span>` : ''}
+        <div class="file-item">
+            <div class="file-icon-wrapper">
+                ${iconHtml}
             </div>
             <p class="file-name">${file.name}</p>
+            <p class="file-meta">${file.meta}</p>
         </div>
     `;
 }
