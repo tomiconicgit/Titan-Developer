@@ -13,7 +13,6 @@ export async function renderFilesPage(container, navigate) {
     currentUserId = await getCurrentUserId();
     
     // Static HTML and styles
-    const filesPageStyles = `/* ... same styles as before ... */`;
     container.innerHTML = `
         <div class="files-page-wrapper">
             <div class="top-controls">
@@ -123,6 +122,9 @@ async function handleDrop(e) {
     }
 }
 
+/**
+ * Attaches drag-and-drop event listeners to file items.
+ */
 function attachDragListeners() {
     const items = document.querySelectorAll('.file-item');
     items.forEach(item => {
@@ -142,14 +144,17 @@ function attachDragListeners() {
     });
 }
 
+/**
+ * Generates the HTML string for a single file item.
+ * @param {object} file - The file data object.
+ * @returns {string} - The HTML string for the file item.
+ */
 function createFileItem(file) {
     let iconPath = '';
     switch (file.type) {
-        // --- THIS LINE IS THE ONLY CHANGE ---
         case 'folder':
-            iconPath = 'icons/Photoroom_20250906_030913.png';
+            iconPath = 'icons/Photoroom_20250906_030913.png'; // The updated icon path
             break;
-        // ------------------------------------
         case 'html':
         case 'css':
         case 'json':
@@ -169,5 +174,4 @@ function createFileItem(file) {
     }
     return `<div class="file-item" draggable="${file.type !== 'folder'}" data-id="${file.id}" data-type="${file.type}"><div class="file-icon-wrapper"><img src="${iconPath}" alt="${file.type} icon" class="file-icon-img no-save"></div><p class="file-name">${file.name}</p><p class="file-meta">${file.meta}</p></div>`;
 }
-
 
