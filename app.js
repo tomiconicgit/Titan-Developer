@@ -1,32 +1,29 @@
 import { renderDashboard } from './pages/dashboard.js';
 import { renderTitanZipPage } from './tools/titanzip.js';
-// Import the new bottom bar component
 import { renderBottomBar } from './components/bottombar.js';
+// Import the new files page
+import { renderFilesPage } from './pages/files.js';
 
-// Get the main containers from the DOM
 const pageContainer = document.getElementById('page-container');
 const bottomBarContainer = document.getElementById('bottom-bar-container');
 
-/**
- * Main navigation function.
- * @param {string} page - The key of the page to navigate to.
- */
 function navigateTo(page) {
-    // Re-render the bottom bar to update the active icon
     renderBottomBar(bottomBarContainer, navigateTo, page);
-    
-    // Clear the current page content
     pageContainer.innerHTML = '';
-    
-    // Switch to the correct page
+    // Scroll to top on page change
+    pageContainer.scrollTop = 0;
+
     switch (page) {
         case 'titanzip':
             renderTitanZipPage(pageContainer);
             break;
         
-        // For now, these all lead to the dashboard
+        // Add the new files page to the router
         case 'files':
-        case 'browser':
+            renderFilesPage(pageContainer, navigateTo);
+            break;
+
+        case 'browser': // Falls through to default for now
         case 'dashboard':
         default:
             renderDashboard(pageContainer, navigateTo);
@@ -34,7 +31,6 @@ function navigateTo(page) {
     }
 }
 
-// Initial render
-navigateTo('dashboard'); // Start on the dashboard page
+navigateTo('dashboard');
 
 
