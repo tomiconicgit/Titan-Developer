@@ -31,24 +31,29 @@ export function renderFilesPage(container, navigate) {
 
         .file-grid {
             display: grid;
-            /* --- CHANGE: 3 columns with more spacing --- */
             grid-template-columns: repeat(3, 1fr);
-            gap: 25px 15px; /* More vertical gap */
+            gap: 20px 15px; /* Adjusted gap */
         }
         .file-item {
             text-align: center;
         }
-        .file-icon-wrapper {
+        
+        /* --- NEW: The container from the reference image --- */
+        .file-icon-container {
             position: relative;
-            width: 100%;
+            width: 90%; /* --- CHANGE: Shrink the item size --- */
+            margin: 0 auto 8px auto; /* Center the smaller container */
             aspect-ratio: 1 / 1;
-            margin-bottom: 10px;
+            background-color: #1c1c1e; /* Dark iOS-style background */
+            border-radius: 22.5%; /* iOS-style "squircle" */
+            padding: 18%; /* Padding to shrink the icon inside */
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
         }
+
         .file-icon-base {
             width: 100%;
             height: 100%;
         }
-        /* The colored label overlay for files */
         .file-type-label {
             position: absolute;
             bottom: 25%;
@@ -56,28 +61,30 @@ export function renderFilesPage(container, navigate) {
             right: 10%;
             padding: 4px 0;
             border-radius: 4px;
-            font-size: 1.2em;
+            /* --- CHANGE: Smaller font for smaller icon --- */
+            font-size: 1em;
             font-weight: 600;
             color: white;
             text-transform: uppercase;
         }
         
-        /* Label colors based on user's original request */
-        .label-js { background-color: #F0A500; } /* Orange */
-        .label-html { background-color: #E34F26; } /* HTML5 Orange/Red */
-        .label-css { background-color: #1572B6; } /* CSS Blue */
-        .label-txt { background-color: #8A2BE2; } /* Purple */
-        .label-json { background-color: #5E5E5E; } /* Grey */
+        .label-js { background-color: #F0A500; }
+        .label-html { background-color: #E34F26; }
+        .label-css { background-color: #1572B6; }
+        .label-txt { background-color: #8A2BE2; }
+        .label-json { background-color: #5E5E5E; }
         .label-default { background-color: #6c757d; }
 
         .file-name {
-            font-size: 0.9em;
+            /* --- CHANGE: Smaller font size --- */
+            font-size: 0.85em;
             color: #e3e3e3;
             font-weight: 500;
             margin: 0;
         }
         .file-meta {
-            font-size: 0.8em;
+            /* --- CHANGE: Smaller font size --- */
+            font-size: 0.75em;
             color: var(--secondary-text-color);
             margin-top: 4px;
         }
@@ -139,7 +146,7 @@ function createFileItem(file) {
 
     return `
         <div class="file-item">
-            <div class="file-icon-wrapper">
+            <div class="file-icon-container">
                 ${iconHtml}
             </div>
             <p class="file-name">${file.name}</p>
