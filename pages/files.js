@@ -1,10 +1,9 @@
 /**
- * Renders the File Manager page, redesigned based on visual references.
+ * Renders the File Manager page, redesigned to fix layout and match new visuals.
  * @param {HTMLElement} container - The DOM element to render the page into.
  * @param {function} navigate - The main navigation function.
  */
 export function renderFilesPage(container, navigate) {
-    // --- MOCK DATA with metadata ---
     const files = [
         { name: 'Project Assets', type: 'folder', meta: '12 items' },
         { name: 'index.html', type: 'html', meta: 'Sep 5, 2025' },
@@ -12,10 +11,8 @@ export function renderFilesPage(container, navigate) {
         { name: 'styles.css', type: 'css', meta: 'Sep 4, 2025' },
         { name: 'app.js', type: 'js', meta: 'Sep 5, 2025' },
         { name: 'notes.txt', type: 'txt', meta: 'Aug 30, 2025' },
-        { name: 'service-worker.js', type: 'js', meta: 'Sep 2, 2025' },
     ];
 
-    // --- STYLES ---
     const filesPageStyles = `
         .files-page-wrapper { padding: 20px 15px; }
         .top-controls { display: flex; gap: 10px; margin-bottom: 25px; align-items: center; }
@@ -32,37 +29,51 @@ export function renderFilesPage(container, navigate) {
         .file-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 20px 15px; /* Adjusted gap */
+            gap: 25px 20px;
         }
         .file-item {
             text-align: center;
         }
-        
-        /* --- NEW: The container from the reference image --- */
-        .file-icon-container {
+
+        /* --- REVISED CONTAINER AND ICON STYLING --- */
+        .file-icon-wrapper {
             position: relative;
-            width: 90%; /* --- CHANGE: Shrink the item size --- */
-            margin: 0 auto 8px auto; /* Center the smaller container */
+            /* This is the key fix: aspect-ratio on the container */
             aspect-ratio: 1 / 1;
-            background-color: #1c1c1e; /* Dark iOS-style background */
-            border-radius: 22.5%; /* iOS-style "squircle" */
-            padding: 18%; /* Padding to shrink the icon inside */
-            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+            margin-bottom: 10px;
+            
+            /* Glassmorphic Style */
+            background-color: rgba(30, 30, 30, 0.75);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(128, 128, 128, 0.15);
+            border-radius: 18px;
+
+            /* Black Drop Shadow */
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+
+            /* Center the icon inside */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            /* Padding shrinks the icon inside the container */
+            padding: 22%;
         }
 
         .file-icon-base {
             width: 100%;
             height: 100%;
         }
+        
         .file-type-label {
             position: absolute;
-            bottom: 25%;
+            bottom: 22%;
             left: 10%;
             right: 10%;
-            padding: 4px 0;
+            padding: 3px 0;
             border-radius: 4px;
-            /* --- CHANGE: Smaller font for smaller icon --- */
-            font-size: 1em;
+            font-size: 1.1em;
             font-weight: 600;
             color: white;
             text-transform: uppercase;
@@ -76,14 +87,12 @@ export function renderFilesPage(container, navigate) {
         .label-default { background-color: #6c757d; }
 
         .file-name {
-            /* --- CHANGE: Smaller font size --- */
-            font-size: 0.85em;
+            font-size: 0.8em;
             color: #e3e3e3;
             font-weight: 500;
             margin: 0;
         }
         .file-meta {
-            /* --- CHANGE: Smaller font size --- */
             font-size: 0.75em;
             color: var(--secondary-text-color);
             margin-top: 4px;
@@ -94,7 +103,6 @@ export function renderFilesPage(container, navigate) {
     styleElement.textContent = filesPageStyles;
     document.head.appendChild(styleElement);
 
-    // --- HTML ---
     container.innerHTML = `
         <div class="files-page-wrapper">
             <div class="top-controls">
@@ -113,11 +121,6 @@ export function renderFilesPage(container, navigate) {
     `;
 }
 
-/**
- * Generates the HTML for a single file or folder item in the new style.
- * @param {object} file - The file or folder data.
- * @returns {string} The HTML string for the item.
- */
 function createFileItem(file) {
     const baseFileIcon = `<svg class="file-icon-base" viewBox="0 0 80 100" fill="#E0E0E0"><path d="M65 0H15C6.7 0 0 6.7 0 15v70C0 93.3 6.7 100 15 100h50c8.3 0 15-6.7 15-15V25L55 0z"/></svg>`;
     const folderIcon = `<svg class="file-icon-base" viewBox="0 0 96 96" fill="#1E88E5"><path d="M82.3 27.8H48.8L39.3 16H13.7C9.5 16 6 19.5 6 23.7V77.3C6 81.5 9.5 85 13.7 85H82.3c4.2 0 7.7-3.5 7.7-7.7V35.5c0-4.2-3.5-7.7-7.7-7.7z"/></svg>`;
@@ -146,7 +149,7 @@ function createFileItem(file) {
 
     return `
         <div class="file-item">
-            <div class="file-icon-container">
+            <div class="file-icon-wrapper">
                 ${iconHtml}
             </div>
             <p class="file-name">${file.name}</p>
