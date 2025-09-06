@@ -4,100 +4,80 @@
  * @param {function} navigate - The main navigation function.
  */
 export function renderFilesPage(container, navigate) {
-    // --- MOCK DATA: Replace with real data from storage later ---
+    // --- MOCK DATA ---
     const files = [
-        { name: 'index.html', type: 'html', size: '2 KB', date: '2025-09-05' },
-        { name: 'styles.css', type: 'css', size: '5 KB', date: '2025-09-04' },
-        { name: 'app.js', type: 'js', size: '12 KB', date: '2025-09-05' },
-        { name: 'Project Brief', type: 'folder', size: '3 files', date: '2025-09-01' },
-        { name: 'notes.txt', type: 'txt', size: '1 KB', date: '2025-08-30' },
-        { name: 'image-assets', type: 'folder', size: '15 files', date: '2025-08-28' },
-        { name: 'README.md', type: 'md', size: '1 KB', date: '2025-08-28' },
-    ].sort((a, b) => new Date(b.date) - new Date(a.date)); // Default sort by date
+        { name: 'index.html', type: 'html' }, { name: 'styles.css', type: 'css' },
+        { name: 'app.js', type: 'js' }, { name: 'Project Brief', type: 'folder' },
+        { name: 'notes.txt', type: 'txt' }, { name: 'image-assets', type: 'folder' },
+        { name: 'README.md', type: 'md' }, { name: 'package.json', type: 'json' },
+        { name: 'logo.svg', type: 'svg' }, { name: 'api.py', type: 'py' },
+        { name: 'server.java', type: 'java' }, { name: 'data-proc', type: 'folder' },
+    ];
 
     // --- STYLES ---
     const filesPageStyles = `
-        .files-page-wrapper {
-            padding: 20px 15px;
-        }
-        .top-controls {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 25px;
-            align-items: center;
-        }
+        .files-page-wrapper { padding: 20px 15px; }
+        .top-controls { display: flex; gap: 10px; margin-bottom: 25px; align-items: center; }
         .search-bar {
-            flex-grow: 1;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 15px;
-            /* Glass Effect */
-            background-color: rgba(30, 30, 30, 0.75);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(128, 128, 128, 0.2);
-            border-radius: 12px;
+            flex-grow: 1; display: flex; align-items: center; gap: 10px; padding: 10px 15px;
+            background-color: rgba(30, 30, 30, 0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(128, 128, 128, 0.2); border-radius: 12px;
         }
-        .search-bar svg {
-            width: 18px;
-            height: 18px;
-            fill: #d1d1d1; /* Off-white */
-            flex-shrink: 0;
-        }
-        .search-input {
-            width: 100%;
-            background: transparent;
-            border: none;
-            outline: none;
-            color: var(--primary-text-color);
-            font-size: 1em;
-        }
-        .filter-button {
-            padding: 10px;
-            border-radius: 12px;
-            background-color: rgba(30, 30, 30, 0.75);
-            border: 1px solid rgba(128, 128, 128, 0.2);
-            cursor: pointer;
-        }
+        .search-bar svg { width: 18px; height: 18px; fill: #d1d1d1; flex-shrink: 0; }
+        .search-input { width: 100%; background: transparent; border: none; outline: none; color: var(--primary-text-color); font-size: 1em; }
+        .filter-button { padding: 10px; border-radius: 12px; background-color: rgba(30, 30, 30, 0.75); border: 1px solid rgba(128, 128, 128, 0.2); cursor: pointer; }
         .filter-button svg { width: 22px; height: 22px; fill: #d1d1d1; }
 
         .file-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            /* --- CHANGE: 4 columns across --- */
+            grid-template-columns: repeat(4, 1fr);
             gap: 15px;
         }
-        .file-item {
+        .file-card {
+            /* --- CHANGE: Glassmorphic Container --- */
+            background-color: rgba(30, 30, 30, 0.65);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(128, 128, 128, 0.2);
+            border-radius: 16px;
+            padding: 10px;
             text-align: center;
+            /* --- CHANGE: Drop Shadow --- */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
-        .file-icon {
+        .file-icon-container {
+            position: relative; /* For positioning the text initials */
             width: 100%;
             aspect-ratio: 1 / 1;
-            border-radius: 16px;
             margin-bottom: 8px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 2em;
+        }
+        .file-icon-svg {
+            width: 100%;
+            height: 100%;
+        }
+        .file-type-initials {
+            position: absolute;
+            top: 55%; /* Vertically center the text inside the icon */
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.8em;
             font-weight: bold;
             color: white;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
-        .file-icon svg { width: 50%; height: 50%; fill: white; }
+        
+        /* --- CHANGE: Icon Color Classes (applied to SVG) --- */
+        .icon-folder-color { fill: #0091EA; }
+        .icon-js-color { fill: #F7DF1E; }
+        .icon-html-color { fill: #E34F26; }
+        .icon-css-color { fill: #1572B6; }
+        .icon-txt-color { fill: #8A2BE2; }
+        .icon-default-color { fill: #6c757d; }
 
-        /* Icon Gradients */
-        .bg-folder { background: linear-gradient(45deg, #007BFF, #00BFFF); }
-        .bg-js { background: linear-gradient(45deg, #F7DF1E, #F0A500); }
-        .bg-html { background: linear-gradient(45deg, #e3e3e3, #c4c4c4); color: #333; }
-        .bg-css { background: linear-gradient(45deg, #264DE4, #1572B6); }
-        .bg-txt { background: linear-gradient(45deg, #8A2BE2, #9932CC); }
-        .bg-default { background: linear-gradient(45deg, #6c757d, #495057); }
-
-        .file-name {
-            font-size: 0.8em;
-            color: #d1d1d1;
-            word-break: break-all;
-        }
+        .file-name { font-size: 0.75em; color: #d1d1d1; word-break: break-all; }
     `;
 
     const styleElement = document.createElement('style');
@@ -129,43 +109,54 @@ export function renderFilesPage(container, navigate) {
  * @returns {string} The HTML string for the item.
  */
 function createFileItem(file) {
+    const fileIconSVG = `<svg class="file-icon-svg" viewBox="0 0 100 120"><path d="M85 25 L85 110 C85 115.523 80.523 120 75 120 L25 120 C19.477 120 15 115.523 15 110 L15 10 C15 4.477 19.477 0 25 0 L60 0 Z M65 5 L65 30 C65 32.761 67.239 35 70 35 L95 35 Z" /></svg>`;
+    const folderIconSVG = `<svg class="file-icon-svg" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`;
+
+    let iconColorClass = '';
     let iconContent = '';
-    let backgroundClass = '';
+    let initials = '';
 
     switch (file.type) {
         case 'folder':
-            backgroundClass = 'bg-folder';
-            iconContent = `<svg viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`;
+            iconColorClass = 'icon-folder-color';
+            iconContent = folderIconSVG;
             break;
         case 'js':
-            backgroundClass = 'bg-js';
-            iconContent = 'JS';
+            iconColorClass = 'icon-js-color';
+            initials = 'JS';
             break;
         case 'html':
-            backgroundClass = 'bg-html';
-            iconContent = 'HTML';
+            iconColorClass = 'icon-html-color';
+            initials = 'HTML';
             break;
         case 'css':
-            backgroundClass = 'bg-css';
-            iconContent = 'CSS';
+            iconColorClass = 'icon-css-color';
+            initials = 'CSS';
             break;
         case 'txt':
-            backgroundClass = 'bg-txt';
-            iconContent = `<svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM16 18H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`;
+            iconColorClass = 'icon-txt-color';
+            initials = 'TXT';
             break;
         default:
-            backgroundClass = 'bg-default';
-            iconContent = `<svg viewBox="0 0 24 24"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/></svg>`;
+            iconColorClass = 'icon-default-color';
+            initials = file.type.toUpperCase().substring(0, 4);
             break;
     }
 
+    // If it's a file (not a folder), set the standard file icon
+    if (file.type !== 'folder') {
+        iconContent = fileIconSVG;
+    }
+
     return `
-        <div class="file-item">
-            <div class="file-icon ${backgroundClass}">
-                ${iconContent}
+        <div class="file-card">
+            <div class="file-icon-container">
+                <div class="${iconColorClass}">${iconContent}</div>
+                ${initials ? `<span class="file-type-initials">${initials}</span>` : ''}
             </div>
             <p class="file-name">${file.name}</p>
         </div>
     `;
 }
+
 
