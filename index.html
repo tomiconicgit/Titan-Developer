@@ -6,7 +6,8 @@
     <title>Titan Developer</title>
     <style>
         :root {
-            --background-color: #000000;
+            /* --- CHANGE: Updated to a dark grey --- */
+            --background-color: #121212;
             --surface-color: #1e1e1e;
             --primary-text-color: #ffffff;
             --secondary-text-color: #a0a0a0;
@@ -22,24 +23,19 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--background-color);
             color: var(--primary-text-color);
-            overflow: hidden; /* Prevent body scrolling */
+            overflow: hidden;
         }
         #page-container {
             width: 100%;
             height: 100%;
             overflow-y: auto;
-            /* Prevent content from being hidden by the bottom bar */
-            padding-bottom: 90px; 
+            padding-bottom: 90px;
         }
     </style>
 </head>
 <body>
-    <!-- Container for all switchable page content -->
     <div id="page-container"></div>
-
-    <!-- Container for the fixed bottom navigation bar -->
     <div id="bottom-bar-container"></div>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script type="module" src="app.js"></script>
 </body>
