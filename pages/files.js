@@ -1,5 +1,5 @@
 /**
- * Renders the File Manager page, redesigned to fix layout and match new visuals.
+ * Renders the File Manager page, now using specific PNG icons and no individual item containers.
  * @param {HTMLElement} container - The DOM element to render the page into.
  * @param {function} navigate - The main navigation function.
  */
@@ -11,6 +11,8 @@ export function renderFilesPage(container, navigate) {
         { name: 'styles.css', type: 'css', meta: 'Sep 4, 2025' },
         { name: 'app.js', type: 'js', meta: 'Sep 5, 2025' },
         { name: 'notes.txt', type: 'txt', meta: 'Aug 30, 2025' },
+        { name: 'design.pdf', type: 'pdf', meta: 'Aug 29, 2025' },
+        { name: 'README.md', type: 'md', meta: 'Aug 28, 2025' },
     ];
 
     const filesPageStyles = `
@@ -35,62 +37,30 @@ export function renderFilesPage(container, navigate) {
             text-align: center;
         }
 
-        /* --- REVISED CONTAINER AND ICON STYLING --- */
+        /* --- Updated for PNG Icons --- */
         .file-icon-wrapper {
             position: relative;
-            /* This is the key fix: aspect-ratio on the container */
-            aspect-ratio: 1 / 1;
-            margin-bottom: 10px;
-            
-            /* Glassmorphic Style */
-            background-color: rgba(30, 30, 30, 0.75);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(128, 128, 128, 0.15);
-            border-radius: 18px;
-
-            /* Black Drop Shadow */
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-
-            /* Center the icon inside */
+            width: 70px; /* Adjust size as needed for PNGs */
+            height: 70px; /* Adjust size as needed for PNGs */
+            margin: 0 auto 10px auto;
             display: flex;
             justify-content: center;
             align-items: center;
-
-            /* Padding shrinks the icon inside the container */
-            padding: 22%;
         }
-
-        .file-icon-base {
-            width: 100%;
-            height: 100%;
+        .file-icon-img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain; /* Ensures the image fits without distortion */
         }
         
-        .file-type-label {
-            position: absolute;
-            bottom: 22%;
-            left: 10%;
-            right: 10%;
-            padding: 3px 0;
-            border-radius: 4px;
-            font-size: 1.1em;
-            font-weight: 600;
-            color: white;
-            text-transform: uppercase;
-        }
-        
-        .label-js { background-color: #F0A500; }
-        .label-html { background-color: #E34F26; }
-        .label-css { background-color: #1572B6; }
-        .label-txt { background-color: #8A2BE2; }
-        .label-json { background-color: #5E5E5E; }
-        .label-default { background-color: #6c757d; }
+        /* Removed .file-type-label and related styles */
 
         .file-name {
-            font-size: 0.8em;
+            font-size: 0.85em;
             color: #e3e3e3;
             font-weight: 500;
             margin: 0;
+            word-break: break-word; /* Ensure long names wrap */
         }
         .file-meta {
             font-size: 0.75em;
@@ -121,41 +91,44 @@ export function renderFilesPage(container, navigate) {
     `;
 }
 
+/**
+ * Generates the HTML for a single file or folder item using PNG icons.
+ * @param {object} file - The file or folder data.
+ * @returns {string} The HTML string for the item.
+ */
 function createFileItem(file) {
-    const baseFileIcon = `<svg class="file-icon-base" viewBox="0 0 80 100" fill="#E0E0E0"><path d="M65 0H15C6.7 0 0 6.7 0 15v70C0 93.3 6.7 100 15 100h50c8.3 0 15-6.7 15-15V25L55 0z"/></svg>`;
-    const folderIcon = `<svg class="file-icon-base" viewBox="0 0 96 96" fill="#1E88E5"><path d="M82.3 27.8H48.8L39.3 16H13.7C9.5 16 6 19.5 6 23.7V77.3C6 81.5 9.5 85 13.7 85H82.3c4.2 0 7.7-3.5 7.7-7.7V35.5c0-4.2-3.5-7.7-7.7-7.7z"/></svg>`;
+    let iconPath = '';
 
-    let iconHtml = '';
-    
-    if (file.type === 'folder') {
-        iconHtml = folderIcon;
-    } else {
-        const fileTypes = {
-            js: { label: 'js', class: 'label-js' },
-            html: { label: 'html', class: 'label-html' },
-            css: { label: 'css', class: 'label-css' },
-            txt: { label: 'txt', class: 'label-txt' },
-            json: { label: 'json', class: 'label-json' },
-        };
-        const typeInfo = fileTypes[file.type] || { label: file.type, class: 'label-default' };
-
-        iconHtml = `
-            ${baseFileIcon}
-            <div class="file-type-label ${typeInfo.class}">
-                ${typeInfo.label}
-            </div>
-        `;
+    switch (file.type) {
+        case 'folder':
+            iconPath = 'icons/Photoroom_20250906_030821.png';
+            break;
+        case 'html':
+        case 'css':
+        case 'json':
+            iconPath = 'icons/Photoroom_20250906_030640.png';
+            break;
+        case 'txt':
+        case 'md':
+        case 'pdf':
+            iconPath = 'icons/Photoroom_20250906_030557.png';
+            break;
+        case 'js':
+            iconPath = 'icons/Photoroom_20250906_030622.png';
+            break;
+        default:
+            iconPath = 'icons/Photoroom_20250906_030640.png'; // Default to a generic file icon
+            break;
     }
 
     return `
         <div class="file-item">
             <div class="file-icon-wrapper">
-                ${iconHtml}
+                <img src="${iconPath}" alt="${file.type} file icon" class="file-icon-img">
             </div>
             <p class="file-name">${file.name}</p>
             <p class="file-meta">${file.meta}</p>
         </div>
     `;
 }
-
 
