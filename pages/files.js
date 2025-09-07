@@ -2,11 +2,12 @@
 export const IndexedDBManager = {
     db: null,
     async init() {
+        // No changes needed here, initialization is correct.
         return new Promise((resolve, reject) => {
             if (this.db) return resolve();
             const request = indexedDB.open('fileSystemDB', 1);
             request.onerror = e => reject("Error opening DB: " + e.target.error);
-            request.onsuccess = e => { this.db = e.target.result; resolve(); };
+            request.onsuccess = e => { this.db = e.target.result; console.log("Database initialized."); resolve(); };
             request.onupgradeneeded = e => {
                 const db = e.target.result;
                 if (!db.objectStoreNames.contains('files')) {
@@ -15,19 +16,38 @@ export const IndexedDBManager = {
             };
         });
     },
-    // --- CORRECTED FUNCTION ---
-    // Reverted to the universally compatible `request.onsuccess` method
-    // to ensure the operation completes before the app continues.
+
+    // --- COMPLETELY REWRITTEN FOR STABILITY ---
+    // This now correctly waits for the entire transaction to complete.
     async saveFile(file) {
+        console.log("Attempting to save file:", file.name);
         return new Promise((resolve, reject) => {
+            if (!this.db) {
+                return reject("Database not initialized.");
+            }
+            // 1. Start the transaction
             const tx = this.db.transaction(['files'], 'readwrite');
             const store = tx.objectStore('files');
-            const request = store.put(file);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = e => reject(e.target.error);
+            
+            // 2. Add the file to the store
+            store.put(file);
+
+            // 3. Resolve the promise ONLY when the transaction is complete
+            tx.oncomplete = () => {
+                console.log(`Transaction complete: File '${file.name}' saved successfully.`);
+                resolve();
+            };
+
+            // 4. Reject the promise if any error occurs during the transaction
+            tx.onerror = (event) => {
+                console.error("Save file transaction error:", event.target.error);
+                reject(event.target.error);
+            };
         });
     },
+
     async getAllFiles() {
+        // No changes needed here.
         return new Promise((resolve, reject) => {
             const tx = this.db.transaction(['files'], 'readonly');
             const store = tx.objectStore('files');
@@ -36,15 +56,25 @@ export const IndexedDBManager = {
             request.onerror = e => reject(e.target.error);
         });
     },
-    // --- CORRECTED FUNCTION ---
-    // Reverted to the universally compatible `request.onsuccess` method.
+
+    // --- REWRITTEN FOR STABILITY ---
     async deleteFile(fileId) {
+        console.log("Attempting to delete file:", fileId);
         return new Promise((resolve, reject) => {
+             if (!this.db) {
+                return reject("Database not initialized.");
+            }
             const tx = this.db.transaction(['files'], 'readwrite');
             const store = tx.objectStore('files');
-            const request = store.delete(fileId);
-            request.onsuccess = () => resolve();
-            request.onerror = e => reject(e.target.error);
+            store.delete(fileId);
+            tx.oncomplete = () => {
+                console.log(`Transaction complete: File '${fileId}' deleted.`);
+                resolve();
+            };
+            tx.onerror = (event) => {
+                console.error("Delete file transaction error:", event.target.error);
+                reject(event.target.error);
+            };
         });
     }
 };
@@ -106,7 +136,9 @@ export async function renderFilesPage(container, navigate) {
 }
 
 async function renderGridFromDB(container) {
+    console.log("Rendering grid...");
     currentFiles = await IndexedDBManager.getAllFiles();
+    console.log("Files fetched:", currentFiles.length);
     const grid = container.querySelector('.file-grid');
     if (!grid) return;
     grid.innerHTML = currentFiles.length > 0 
@@ -155,7 +187,11 @@ function showCreateFileModal(container) {
 }
 
 async function handleCreateFile(filename, container) {
-    if (!filename || !filename.includes('.')) return;
+    if (!filename || !filename.includes('.')) {
+        console.warn("Invalid filename provided.");
+        return;
+    }
+    console.log(`Creating file: ${filename}`);
     const newFile = {
         id: `file-${Date.now()}`,
         name: filename,
@@ -164,9 +200,14 @@ async function handleCreateFile(filename, container) {
         content: ``,
         needsSync: true
     };
-    await IndexedDBManager.saveFile(newFile);
-    await renderGridFromDB(container);
-    debouncedSync();
+    try {
+        await IndexedDBManager.saveFile(newFile);
+        console.log("Save operation finished. Now re-rendering grid.");
+        await renderGridFromDB(container); // Re-render the grid
+        debouncedSync();
+    } catch (error) {
+        console.error("Failed to save file and re-render:", error);
+    }
 }
 
 function showContextMenu(file, event, navigate) {
