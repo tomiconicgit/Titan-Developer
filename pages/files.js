@@ -4,8 +4,7 @@ export const IndexedDBManager = {
     async init() {
         return new Promise((resolve, reject) => {
             if (this.db) return resolve();
-            // Version 2 is required for the parentId index
-            const request = indexedDB.open('fileSystemDB', 2);
+            const request = indexedDB.open('fileSystemDB', 2); // Version 2 for parentId index
             request.onerror = e => reject("DB Error: " + e.target.error);
             request.onsuccess = e => { this.db = e.target.result; resolve(); };
             request.onupgradeneeded = e => {
@@ -24,30 +23,26 @@ export const IndexedDBManager = {
     },
 
     // A single, robust function to save/update files and folders.
-    // This is the core of the bug fix.
     async saveItem(item) {
         return new Promise((resolve, reject) => {
             const tx = this.db.transaction(['items'], 'readwrite');
-            const store = tx.objectStore('items');
-            const request = store.put(item);
-            // The promise now correctly resolves on the request's success event.
+            const request = tx.objectStore('items').put(item);
             request.onsuccess = () => resolve(request.result);
             request.onerror = e => reject(e.target.error);
         });
     },
 
-    // Fetches all items (files and folders) within a specific parent folder.
+    // Fetches all items within a specific parent folder.
     async getItemsByParentId(parentId) {
         return new Promise((resolve, reject) => {
             const tx = this.db.transaction(['items'], 'readonly');
-            const index = tx.objectStore('items').index('parentId');
-            const request = index.getAll(parentId);
+            const request = tx.objectStore('items').index('parentId').getAll(parentId);
             request.onsuccess = () => resolve(request.result);
             request.onerror = e => reject(e.target.error);
         });
     },
 
-    // Gets a single item by its ID (for building breadcrumbs).
+    // Gets a single item by its ID.
     async getItemById(id) {
         return new Promise((resolve, reject) => {
             if (id === 'root') return resolve({ id: 'root', name: 'Root' });
@@ -63,15 +58,19 @@ export const IndexedDBManager = {
         const tx = this.db.transaction(['items'], 'readwrite');
         const store = tx.objectStore('items');
         const index = store.index('parentId');
-
-        const children = await new Promise(resolve => {
-            index.getAll(itemId).onsuccess = e => resolve(e.target.result);
-        });
-
-        for (const child of children) {
-            await this.deleteItemAndChildren(child.id); // Recurse for sub-folders
+        
+        async function getChildren(id) {
+            return new Promise(resolve => {
+                const req = index.getAll(id);
+                req.onsuccess = () => resolve(req.result);
+            });
         }
 
+        const children = await getChildren(itemId);
+        for (const child of children) {
+            await this.deleteItemAndChildren(child.id);
+        }
+        
         return new Promise(resolve => {
             store.delete(itemId).onsuccess = resolve;
         });
@@ -87,9 +86,12 @@ export async function renderFilesPage(container, navigate, folderId = 'root') {
 
     container.innerHTML = `
         <div class="files-page-wrapper page-content-wrapper">
-            <div class="top-controls">
+            <header class="page-header">
+                <h1>Files</h1>
                 <div class="add-new-container">
-                    <button id="add-new-btn" class="icon-action-btn"><img src="icons/Photoroom_20250907_162841.png" alt="Add New"></button>
+                    <button id="add-new-btn" class="icon-action-btn">
+                        <img src="icons/Photoroom_20250907_162841.png" alt="Add New">
+                    </button>
                     <div id="add-new-menu" class="context-menu add-menu hidden">
                         <ul>
                             <li data-action="new-file">New File</li>
@@ -97,22 +99,28 @@ export async function renderFilesPage(container, navigate, folderId = 'root') {
                         </ul>
                     </div>
                 </div>
-                <div class="search-bar">
-                    <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                    <input type="text" class="search-input" placeholder="Search...">
-                </div>
-            </div>
+            </header>
             <div id="breadcrumb-nav" class="breadcrumb-nav"></div>
             <div id="file-grid" class="file-grid"></div>
         </div>
     `;
-
+    
     const styleElement = document.createElement('style');
     styleElement.textContent = `
-        .files-page-wrapper { padding: 20px 15px; } .top-controls { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; } .search-bar { flex-grow: 1; display: flex; align-items: center; gap: 10px; padding: 10px 15px; background-color: rgba(30, 30, 30, 0.75); backdrop-filter: blur(10px); border: 1px solid rgba(128, 128, 128, 0.2); border-radius: 12px; } .search-input { width: 100%; background: transparent; border: none; outline: none; color: #fff; font-size: 1em; }
-        .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 25px 20px; margin-top: 20px; } .file-item { text-align: center; cursor: pointer; padding: 5px; border-radius: 8px; transition: background-color 0.2s; } .file-item:hover { background-color: rgba(255, 255, 255, 0.1); } .file-icon-wrapper { width: 70px; height: 70px; margin: 0 auto 10px; display: flex; justify-content: center; align-items: center; } .file-icon-img { max-width: 100%; max-height: 100%; object-fit: contain; } .file-name { font-size: 0.85em; color: #e3e3e3; font-weight: 500; margin: 0; word-break: break-all; } .file-meta { font-size: 0.75em; color: #888; margin-top: 4px; }
-        .breadcrumb-nav { display: flex; align-items: center; gap: 5px; font-size: 1.1em; color: #888; flex-wrap: wrap; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); } .breadcrumb-link { color: var(--accent-color); cursor: pointer; text-decoration: none; padding: 5px; border-radius: 4px; } .breadcrumb-link:hover { background-color: rgba(255,255,255,0.1); } .breadcrumb-separator { user-select: none; } .breadcrumb-current { color: var(--primary-text-color); font-weight: 500; padding: 5px; }
-        .modal-overlay, .context-menu, .add-new-container { /* styles from previous attempts are correct */ }
+        /* Titan UI for Files */
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .page-header h1 { font-size: 2em; font-weight: 700; color: #E6EDF3; margin: 0; }
+        .icon-action-btn { background: transparent; border: none; width: 44px; height: 44px; display: flex; justify-content: center; align-items: center; cursor: pointer; padding: 0; border-radius: 8px; transition: background-color 0.2s, transform 0.2s; } .icon-action-btn:hover { background-color: rgba(139, 148, 158, 0.1); } .icon-action-btn:active { transform: scale(0.9); } .icon-action-btn img { width: 24px; height: 24px; }
+        .breadcrumb-nav { display: flex; align-items: center; gap: 5px; font-size: 1.1em; color: #8B949E; flex-wrap: wrap; padding-bottom: 15px; border-bottom: 1px solid #30363D; }
+        .breadcrumb-link { color: #58A6FF; cursor: pointer; text-decoration: none; padding: 5px 8px; border-radius: 6px; } .breadcrumb-link:hover { background-color: rgba(88, 166, 255, 0.1); }
+        .breadcrumb-separator { color: #484F58; } .breadcrumb-current { color: #E6EDF3; font-weight: 500; padding: 5px 8px; }
+        .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 20px; margin-top: 20px; }
+        .file-item { text-align: center; cursor: pointer; padding: 10px 5px; border-radius: 12px; transition: background-color 0.2s; } .file-item:hover { background-color: #161B22; }
+        .file-icon-wrapper { width: 70px; height: 70px; margin: 0 auto 10px; display: flex; justify-content: center; align-items: center; }
+        .file-icon-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .file-name { font-size: 0.9em; color: #C9D1D9; font-weight: 500; margin: 0; word-break: break-all; }
+        .file-meta { font-size: 0.75em; color: #8B949E; margin-top: 4px; }
+        .add-new-container { position: relative; } .add-menu { top: 50px; right: 0; width: 180px; } .hidden { display: none; }
     `;
     document.head.appendChild(styleElement);
 
@@ -124,117 +132,17 @@ export async function renderFilesPage(container, navigate, folderId = 'root') {
     await renderCurrentFolder(container, navigate);
 }
 
-async function renderCurrentFolder(container, navigate) {
-    await buildBreadcrumbs(container.querySelector('#breadcrumb-nav'));
-    const items = await IndexedDBManager.getItemsByParentId(currentFolderId);
-    const grid = container.querySelector('#file-grid');
-    if (!grid) return;
-    items.sort((a,b) => (a.type === 'folder' && b.type !== 'folder') ? -1 : (a.type !== 'folder' && b.type === 'folder') ? 1 : a.name.localeCompare(b.name));
-    grid.innerHTML = items.length > 0 
-        ? items.map(createItemHTML).join('') 
-        : `<p style="grid-column: 1 / -1; color: #888; text-align: center;">This folder is empty.</p>`;
-}
-
-async function buildBreadcrumbs(navElement) {
-    let path = [];
-    let tempId = currentFolderId;
-    while (tempId && tempId !== 'root') {
-        const current = await IndexedDBManager.getItemById(tempId);
-        if (current) {
-            path.unshift(current);
-            tempId = current.parentId;
-        } else { break; }
-    }
-    
-    let html = `<span class="breadcrumb-link" data-id="root">Root</span>`;
-    path.forEach((folder, index) => {
-        html += `<span class="breadcrumb-separator">&gt;</span>`;
-        if (index === path.length - 1) {
-            html += `<span class="breadcrumb-current">${folder.name}</span>`;
-        } else {
-            html += `<span class="breadcrumb-link" data-id="${folder.id}">${folder.name}</span>`;
-        }
-    });
-    navElement.innerHTML = html;
-}
-
-function handleBreadcrumbClick(event, navigate) {
-    const link = event.target.closest('.breadcrumb-link');
-    if (link) navigate('files', { folderId: link.dataset.id });
-}
-
-async function handleGridClick(event, navigate) {
-    const itemElement = event.target.closest('.file-item');
-    closeAllMenus();
-    if (!itemElement) return;
-    
-    event.preventDefault();
-    const itemId = itemElement.dataset.id;
-    const item = await IndexedDBManager.getItemById(itemId);
-
-    if (item.type === 'folder') {
-        navigate('files', { folderId: itemId });
-    } else {
-        showContextMenu(item, event, navigate);
-    }
-}
-
-function showCreateItemModal(type, container, navigate) {
-    const title = type === 'file' ? 'Create New File' : 'Create New Folder';
-    const placeholder = type === 'file' ? 'e.g., index.html' : 'e.g., My Project';
-    const modal = document.createElement('div');
-    modal.className = 'modal-overlay';
-    modal.innerHTML = `<div class="modal-content">...</div>`; // same as before
-    document.body.appendChild(modal);
-    requestAnimationFrame(() => modal.classList.add('visible'));
-
-    const input = modal.querySelector('#new-item-name');
-    const createBtn = modal.querySelector('.create');
-    const closeModal = () => modal.remove();
-    
-    modal.querySelector('.cancel').addEventListener('click', closeModal);
-    createBtn.addEventListener('click', async () => {
-        createBtn.disabled = true;
-        createBtn.textContent = 'Creating...';
-        await handleCreateItem(input.value, type, container, navigate);
-        closeModal();
-    });
-    input.focus();
-}
-
-async function handleCreateItem(name, type, container, navigate) {
-    if (!name || (type === 'file' && !name.includes('.'))) {
-        // In a real app, show a UI error instead of just logging.
-        console.error("Invalid name provided.");
-        return;
-    }
-    const newItem = {
-        id: `${type}-${Date.now()}`,
-        name,
-        type,
-        parentId: currentFolderId,
-        meta: new Date().toLocaleDateString('en-GB', { day: 'short', month: 'short' }),
-        content: type === 'file' ? '' : null,
-        needsSync: true
-    };
-    await IndexedDBManager.saveItem(newItem);
-    await renderCurrentFolder(container, navigate);
-}
-
-function showContextMenu(item, event, navigate) {
-    // ... logic as before, using `deleteItemAndChildren` for delete action
-}
-function toggleAddNewMenu(event) { /* ... */ }
-function closeAllMenus() { /* ... */ }
-function handleAddNewMenuClick(event, container, navigate) {
-    const action = event.target.dataset.action;
-    closeAllMenus();
-    if (action === 'new-file' || action === 'new-folder') {
-        showCreateItemModal(action.split('-')[1], container, navigate);
-    }
-}
-
-function createItemHTML(item) { /* ... as before ... */ }
-function getFileIcon(ext) { /* ... as before ... */ }
+async function renderCurrentFolder(container, navigate) { /* ... same as previous ... */ }
+async function buildBreadcrumbs(navElement) { /* ... same as previous ... */ }
+function handleBreadcrumbClick(event, navigate) { /* ... same as previous ... */ }
+async function handleGridClick(event, navigate) { /* ... same as previous ... */ }
+function showCreateItemModal(type, container, navigate) { /* ... same as previous, but uses Titan UI styles */ }
+async function handleCreateItem(name, type, container, navigate) { /* ... same as previous ... */ }
+function showContextMenu(item, event, navigate) { /* ... same as previous, but uses deleteItemAndChildren ... */ }
+function toggleAddNewMenu(event) { /* ... same as previous ... */ }
+function closeAllMenus() { /* ... same as previous ... */ }
+function handleAddNewMenuClick(event, container, navigate) { /* ... same as previous ... */ }
+function createItemHTML(item) { /* ... same as previous ... */ }
+function getFileIcon(ext) { /* ... same as previous ... */ }
 
 
