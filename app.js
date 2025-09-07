@@ -3,7 +3,7 @@ import { renderFilesPage } from './pages/files.js';
 import { renderDashboard } from './pages/dashboard.js';
 import { renderCodeEditorPage } from './tools/codeeditor.js';
 import { renderTitanZipPage } from './tools/titanzip.js';
-import { renderBrowserPage } from './pages/browser.js'; // New
+import { renderBrowserPage } from './pages/browser.js';
 import { renderBottomBar } from './components/bottombar.js';
 import { IndexedDBManager } from './pages/files.js'; 
 
@@ -13,6 +13,8 @@ const bottomBarContainer = document.getElementById('bottom-bar-container');
 
 /**
  * Main navigation function to switch between pages.
+ * @param {string} page The key of the page to navigate to.
+ * @param {object} [data] Optional data to pass to the page (e.g., a file or folderId).
  */
 async function navigate(page, data) {
     console.log(`Navigating to page: '${page}'`, data ? `with data: ${JSON.stringify(data)}`: '');
@@ -34,9 +36,9 @@ async function navigate(page, data) {
                 console.error("Navigation error: Tried to open editor with no file data.");
                 return navigate('files'); 
             }
-            renderCodeEditorPage(appContainer, data, navigate, saveFileCallback);
+            renderCodeEditorPage(appContainer, data, navigate, saveItemCallback);
             break;
-        case 'browser': // New
+        case 'browser':
             renderBrowserPage(appContainer, navigate);
             break;
         case 'titanzip':
@@ -50,17 +52,18 @@ async function navigate(page, data) {
 }
 
 /**
- * A callback function for the code editor to save files.
+ * A callback function that the code editor can use to save an item.
+ * @param {object} itemToSave The updated item object from the editor.
  */
-async function saveFileCallback(fileToSave) {
+async function saveItemCallback(itemToSave) {
     await IndexedDBManager.init();
-    await IndexedDBManager.saveItem(fileToSave);
+    await IndexedDBManager.saveItem(itemToSave);
 }
 
 // --- App Initialization ---
 function initialize() {
     console.log("App initializing...");
-    // Start by navigating to the dashboard.
+    // Start by navigating to the dashboard as requested.
     navigate('dashboard'); 
 }
 
