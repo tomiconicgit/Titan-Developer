@@ -1,5 +1,5 @@
 // --- IndexedDB Logic for Local-First Storage ---
-// THIS VERSION IS REWRITTEN TO BE 100% RELIABLE AND FIX THE CREATION BUG.
+// THIS VERSION IS REWRITTEN WITH THE DEFINITIVE FIX FOR THE TRANSACTION BUG.
 export const IndexedDBManager = {
     db: null,
     async init() {
@@ -17,28 +17,20 @@ export const IndexedDBManager = {
         });
     },
 
-    // --- DEFINITIVELY CORRECTED SAVE FUNCTION ---
+    // --- DEFINITIVELY CORRECTED SAVE/UPDATE FUNCTION ---
     async saveFile(file) {
         return new Promise((resolve, reject) => {
             if (!this.db) return reject("Database not initialized.");
             const tx = this.db.transaction(['files'], 'readwrite');
             const store = tx.objectStore('files');
-            // We must listen to the request, not just the transaction
             const request = store.put(file);
+            // This is the critical change: The promise resolves on the SUCCESS of the request itself.
             request.onsuccess = () => {
-                console.log(`Request successful: File '${file.name}' put in store.`);
+                console.log(`Request successful: File '${file.name}' saved.`);
+                resolve();
             };
             request.onerror = (event) => {
                 console.error("Save file request error:", event.target.error);
-                reject(event.target.error);
-            };
-            // Resolve only when the entire transaction is complete
-            tx.oncomplete = () => {
-                 console.log(`Transaction complete: File '${file.name}' is saved.`);
-                resolve();
-            };
-            tx.onerror = (event) => {
-                console.error("Save file transaction error:", event.target.error);
                 reject(event.target.error);
             };
         });
@@ -63,18 +55,11 @@ export const IndexedDBManager = {
             const store = tx.objectStore('files');
             const request = store.delete(fileId);
             request.onsuccess = () => {
-                 console.log(`Request successful: File '${fileId}' deleted from store.`);
-            };
-            request.onerror = (event) => {
-                 console.error("Delete file request error:", event.target.error);
-                 reject(event.target.error);
-            };
-            tx.oncomplete = () => {
-                console.log(`Transaction complete: File '${fileId}' is deleted.`);
+                console.log(`Request successful: File '${fileId}' deleted.`);
                 resolve();
             };
-            tx.onerror = (event) => {
-                console.error("Delete file transaction error:", event.target.error);
+            request.onerror = (event) => {
+                console.error("Delete file request error:", event.target.error);
                 reject(event.target.error);
             };
         });
@@ -178,16 +163,29 @@ function showCreateFileModal(container) {
     };
     modal.querySelector('.cancel').addEventListener('click', closeModal);
     modal.querySelector('.create').addEventListener('click', async () => {
-        // This is now guaranteed to wait for the save to finish
-        await handleCreateFile(input.value, container);
-        closeModal();
+        const createButton = modal.querySelector('.create');
+        createButton.disabled = true; // Prevent double clicks
+        createButton.textContent = 'Creating...';
+        
+        try {
+            await handleCreateFile(input.value, container);
+            closeModal();
+        } catch (error) {
+             // Handle error, e.g., show a message
+             console.error("Creation failed:", error);
+             createButton.disabled = false;
+             createButton.textContent = 'Create';
+        }
     });
     modal.addEventListener('click', (e) => { if(e.target === modal) closeModal(); });
     input.focus();
 }
 
 async function handleCreateFile(filename, container) {
-    if (!filename || !filename.includes('.')) return;
+    if (!filename || !filename.includes('.')) {
+         console.warn("Invalid filename. Aborting creation.");
+         return; // Return here to prevent empty files
+    }
     const newFile = {
         id: `file-${Date.now()}`,
         name: filename,
@@ -196,13 +194,15 @@ async function handleCreateFile(filename, container) {
         content: ``,
         needsSync: true
     };
+    // The try/catch block ensures that if saving fails, the modal won't hang.
     try {
         await IndexedDBManager.saveFile(newFile);
         await renderGridFromDB(container);
         debouncedSync();
     } catch (error) {
         console.error("Failed to save file and re-render:", error);
-        // In a real app, you would show an error message to the user here.
+        // Re-throw the error so the modal's catch block can handle it
+        throw error;
     }
 }
 
