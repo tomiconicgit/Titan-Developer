@@ -35,11 +35,13 @@ export function renderBottomBar(container, navigate, currentPage) {
             flex-grow: 1;
             color: #d1d1d1; /* Off-white */
             transition: color 0.2s;
+            -webkit-tap-highlight-color: transparent; /* Removes tap highlight on mobile */
         }
         .nav-item svg {
             width: 26px;
             height: 26px;
             fill: currentColor; /* Inherits color from parent */
+            pointer-events: none; /* Make sure click event is on the parent div */
         }
         /* Active State */
         .nav-item.active {
@@ -49,8 +51,13 @@ export function renderBottomBar(container, navigate, currentPage) {
 
     // Inject styles
     const styleElement = document.createElement('style');
-    styleElement.textContent = bottomBarStyles;
-    document.head.appendChild(styleElement);
+    // A simple check to avoid adding styles repeatedly if not needed.
+    if (!document.getElementById('bottom-bar-styles')) {
+        styleElement.id = 'bottom-bar-styles';
+        styleElement.textContent = bottomBarStyles;
+        document.head.appendChild(styleElement);
+    }
+    
 
     // Navigation links definitions
     const navLinks = [
@@ -77,4 +84,5 @@ export function renderBottomBar(container, navigate, currentPage) {
         });
     });
 }
+
 
