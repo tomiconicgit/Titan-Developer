@@ -1,4 +1,5 @@
 // --- IndexedDB Logic for Local-First Storage ---
+// REWRITTEN FOR ROBUSTNESS: This new version is more reliable.
 export const IndexedDBManager = {
     db: null,
     async init() {
@@ -18,14 +19,17 @@ export const IndexedDBManager = {
     async saveFile(file) {
         return new Promise((resolve, reject) => {
             const tx = this.db.transaction(['files'], 'readwrite');
-            tx.objectStore('files').put(file);
-            tx.oncomplete = () => resolve();
-            tx.onerror = e => reject(e.target.error);
+            const store = tx.objectStore('files');
+            const request = store.put(file);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = e => reject(e.target.error);
         });
     },
     async getAllFiles() {
         return new Promise((resolve, reject) => {
-            const request = this.db.transaction(['files'], 'readonly').objectStore('files').getAll();
+            const tx = this.db.transaction(['files'], 'readonly');
+            const store = tx.objectStore('files');
+            const request = store.getAll();
             request.onsuccess = () => resolve(request.result);
             request.onerror = e => reject(e.target.error);
         });
@@ -33,9 +37,10 @@ export const IndexedDBManager = {
     async deleteFile(fileId) {
         return new Promise((resolve, reject) => {
             const tx = this.db.transaction(['files'], 'readwrite');
-            tx.objectStore('files').delete(fileId);
-            tx.oncomplete = () => resolve();
-            tx.onerror = e => reject(e.target.error);
+            const store = tx.objectStore('files');
+            const request = store.delete(fileId);
+            request.onsuccess = () => resolve();
+            request.onerror = e => reject(e.target.error);
         });
     }
 };
@@ -54,7 +59,6 @@ let currentFiles = [];
 
 export async function renderFilesPage(container, navigate) {
     await IndexedDBManager.init();
-    // Added 'page-content-wrapper' for the fade-in animation
     container.innerHTML = `
         <div class="files-page-wrapper page-content-wrapper">
             <div class="top-controls">
@@ -83,10 +87,10 @@ export async function renderFilesPage(container, navigate) {
     
     const styleElement = document.createElement('style');
     styleElement.textContent = `
-        /* Main Page Styles */ .files-page-wrapper { padding: 20px 15px; } .top-controls { display: flex; gap: 10px; margin-bottom: 25px; align-items: center; } .search-bar { flex-grow: 1; display: flex; align-items: center; gap: 10px; padding: 10px 15px; background-color: rgba(30, 30, 30, 0.75); backdrop-filter: blur(10px); border: 1px solid rgba(128, 128, 128, 0.2); border-radius: 12px; } .search-bar svg { width: 18px; height: 18px; fill: #d1d1d1; } .search-input { width: 100%; background: transparent; border: none; outline: none; color: #fff; font-size: 1em; } .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 25px 20px; } .file-item { text-align: center; cursor: pointer; padding: 5px; border-radius: 8px; transition: background-color 0.2s; } .file-item:hover { background-color: rgba(255, 255, 255, 0.1); } .file-icon-wrapper { width: 70px; height: 70px; margin: 0 auto 10px; display: flex; justify-content: center; align-items: center; } .file-icon-img { max-width: 100%; max-height: 100%; object-fit: contain; } .file-name { font-size: 0.85em; color: #e3e3e3; font-weight: 500; margin: 0; word-break: break-all; } .file-meta { font-size: 0.75em; color: #888; margin-top: 4px; }
-        /* Modal Styles with Fade Animation */ .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(5px); opacity: 0; transition: opacity 0.3s ease; } .modal-overlay.visible { opacity: 1; } .modal-content { background: #2c2c2e; padding: 25px; border-radius: 16px; width: 90%; max-width: 400px; text-align: center; border: 1px solid #444; transform: scale(0.95); transition: transform 0.3s ease; } .modal-overlay.visible .modal-content { transform: scale(1); } .modal-content h3 { margin-top: 0; margin-bottom: 20px; } .modal-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #555; background: #3a3a3c; color: white; font-size: 1em; margin-bottom: 20px; box-sizing: border-box; } .modal-actions { display: flex; gap: 10px; justify-content: flex-end; } .modal-btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; } .modal-btn.cancel { background: #555; color: white; } .modal-btn.create { background: #007AFF; color: white; }
-        /* Context & Add Menu Styles */ .context-menu { position: absolute; z-index: 1001; background: #3a3a3c; border-radius: 8px; overflow: hidden; border: 1px solid #555; box-shadow: 0 5px 15px rgba(0,0,0,0.3); } .context-menu ul { list-style: none; margin: 0; padding: 5px; } .context-menu li { padding: 10px 15px; cursor: pointer; color: #f0f0f0; } .context-menu li:hover { background-color: #007AFF; } .context-menu li.delete { color: #ff5555; } .context-menu li.delete:hover { background: #ff5555; color: white; }
-        /* MODIFIED Styles for Add button and Menu */ .add-new-container { position: relative; } .icon-action-btn { background: transparent; border: none; width: 44px; height: 44px; display: flex; justify-content: center; align-items: center; cursor: pointer; padding: 0; border-radius: 8px; transition: background-color 0.2s, transform 0.2s; } .icon-action-btn:hover { background-color: rgba(255, 255, 255, 0.1); } .icon-action-btn:active { transform: scale(0.9); } .icon-action-btn img { width: 24px; height: 24px; pointer-events: none; } .add-menu { top: 54px; left: 0; width: 180px; } .hidden { display: none; }
+        .files-page-wrapper { padding: 20px 15px; } .top-controls { display: flex; gap: 10px; margin-bottom: 25px; align-items: center; } .search-bar { flex-grow: 1; display: flex; align-items: center; gap: 10px; padding: 10px 15px; background-color: rgba(30, 30, 30, 0.75); backdrop-filter: blur(10px); border: 1px solid rgba(128, 128, 128, 0.2); border-radius: 12px; } .search-bar svg { width: 18px; height: 18px; fill: #d1d1d1; } .search-input { width: 100%; background: transparent; border: none; outline: none; color: #fff; font-size: 1em; } .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 25px 20px; } .file-item { text-align: center; cursor: pointer; padding: 5px; border-radius: 8px; transition: background-color 0.2s; } .file-item:hover { background-color: rgba(255, 255, 255, 0.1); } .file-icon-wrapper { width: 70px; height: 70px; margin: 0 auto 10px; display: flex; justify-content: center; align-items: center; } .file-icon-img { max-width: 100%; max-height: 100%; object-fit: contain; } .file-name { font-size: 0.85em; color: #e3e3e3; font-weight: 500; margin: 0; word-break: break-all; } .file-meta { font-size: 0.75em; color: #888; margin-top: 4px; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(5px); opacity: 0; transition: opacity 0.3s ease; } .modal-overlay.visible { opacity: 1; } .modal-content { background: #2c2c2e; padding: 25px; border-radius: 16px; width: 90%; max-width: 400px; text-align: center; border: 1px solid #444; transform: scale(0.95); transition: transform 0.3s ease; } .modal-overlay.visible .modal-content { transform: scale(1); } .modal-content h3 { margin-top: 0; margin-bottom: 20px; } .modal-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #555; background: #3a3a3c; color: white; font-size: 1em; margin-bottom: 20px; box-sizing: border-box; } .modal-actions { display: flex; gap: 10px; justify-content: flex-end; } .modal-btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; } .modal-btn.cancel { background: #555; color: white; } .modal-btn.create { background: #007AFF; color: white; }
+        .context-menu { position: absolute; z-index: 1001; background: #3a3a3c; border-radius: 8px; overflow: hidden; border: 1px solid #555; box-shadow: 0 5px 15px rgba(0,0,0,0.3); } .context-menu ul { list-style: none; margin: 0; padding: 5px; } .context-menu li { padding: 10px 15px; cursor: pointer; color: #f0f0f0; } .context-menu li:hover { background-color: #007AFF; } .context-menu li.delete { color: #ff5555; } .context-menu li.delete:hover { background: #ff5555; color: white; }
+        .add-new-container { position: relative; } .icon-action-btn { background: transparent; border: none; width: 44px; height: 44px; display: flex; justify-content: center; align-items: center; cursor: pointer; padding: 0; border-radius: 8px; transition: background-color 0.2s, transform 0.2s; } .icon-action-btn:hover { background-color: rgba(255, 255, 255, 0.1); } .icon-action-btn:active { transform: scale(0.9); } .icon-action-btn img { width: 24px; height: 24px; pointer-events: none; } .add-menu { top: 54px; left: 0; width: 180px; } .hidden { display: none; }
     `;
     document.head.appendChild(styleElement);
 
@@ -131,17 +135,12 @@ function showCreateFileModal(container) {
         </div>
     `;
     document.body.appendChild(modal);
-
-    // Trigger the fade-in animation
     requestAnimationFrame(() => modal.classList.add('visible'));
-
     const input = modal.querySelector('#new-filename-input');
-    
     const closeModal = () => {
         modal.classList.remove('visible');
         modal.addEventListener('transitionend', () => modal.remove(), { once: true });
     };
-    
     modal.querySelector('.cancel').addEventListener('click', closeModal);
     modal.querySelector('.create').addEventListener('click', async () => {
         await handleCreateFile(input.value, container);
@@ -173,7 +172,6 @@ function showContextMenu(file, event, navigate) {
     menu.style.left = `${event.clientX}px`;
     menu.innerHTML = `<ul><li data-action="edit">Code Editor</li><li data-action="rename">Rename</li><li data-action="duplicate">Duplicate</li><li data-action="move">Move</li><li data-action="delete" class="delete">Delete</li></ul>`;
     document.body.appendChild(menu);
-
     menu.addEventListener('click', async (e) => {
         const action = e.target.dataset.action;
         const appContainer = document.querySelector('.files-page-wrapper').parentElement;
@@ -219,7 +217,7 @@ function closeAllMenus() {
 }
 
 function createFileItemHTML(file) {
-    let iconPath = 'icons/Photoroom_20250906_030640.png'; // Default
+    let iconPath = 'icons/Photoroom_20250906_030640.png';
     switch (file.type) {
         case 'folder': iconPath = 'icons/Photoroom_20250906_030913.png'; break;
         case 'html': case 'svg': iconPath = 'icons/Photoroom_20250906_030640.png'; break;
@@ -228,11 +226,7 @@ function createFileItemHTML(file) {
         case 'txt': case 'md': case 'pdf': iconPath = 'icons/Photoroom_20250906_030557.png'; break;
         case 'js': iconPath = 'icons/Photoroom_20250906_030622.png'; break;
     }
-    return `<div class="file-item" data-id="${file.id}" data-type="${file.type}">
-                <div class="file-icon-wrapper"><img src="${iconPath}" alt="${file.type} icon" class="file-icon-img"></div>
-                <p class="file-name">${file.name}</p>
-                <p class="file-meta">${file.meta}</p>
-            </div>`;
+    return `<div class="file-item" data-id="${file.id}" data-type="${file.type}"><div class="file-icon-wrapper"><img src="${iconPath}" alt="${file.type} icon" class="file-icon-img"></div><p class="file-name">${file.name}</p><p class="file-meta">${file.meta}</p></div>`;
 }
 
 
