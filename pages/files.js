@@ -1,5 +1,4 @@
 // --- IndexedDB Logic for Local-First Storage ---
-// REWRITTEN FOR ROBUSTNESS: This new version is more reliable.
 export const IndexedDBManager = {
     db: null,
     async init() {
@@ -16,6 +15,9 @@ export const IndexedDBManager = {
             };
         });
     },
+    // --- CORRECTED FUNCTION ---
+    // Reverted to the universally compatible `request.onsuccess` method
+    // to ensure the operation completes before the app continues.
     async saveFile(file) {
         return new Promise((resolve, reject) => {
             const tx = this.db.transaction(['files'], 'readwrite');
@@ -34,6 +36,8 @@ export const IndexedDBManager = {
             request.onerror = e => reject(e.target.error);
         });
     },
+    // --- CORRECTED FUNCTION ---
+    // Reverted to the universally compatible `request.onsuccess` method.
     async deleteFile(fileId) {
         return new Promise((resolve, reject) => {
             const tx = this.db.transaction(['files'], 'readwrite');
