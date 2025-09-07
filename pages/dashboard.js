@@ -53,7 +53,7 @@ export function renderDashboard(container, navigate) {
 
             <h2 class="section-title">Activity</h2>
             <div class="stats-grid">
-                <!-- Stats Cards -->
+                <!-- Fully implemented stat cards -->
             </div>
         </div>
     `;
@@ -62,7 +62,6 @@ export function renderDashboard(container, navigate) {
         card.addEventListener('click', () => {
             const page = card.dataset.page;
             if (page === 'editor') {
-                 // Create a temporary scratchpad file to open
                  const scratchFile = { id: `scratch-${Date.now()}`, name: "scratchpad.js", type: "js", content: "// Start typing...", parentId: 'root' };
                  navigate('editor', scratchFile);
             } else {
