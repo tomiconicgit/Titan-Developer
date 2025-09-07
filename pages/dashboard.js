@@ -14,6 +14,42 @@ export function renderDashboard(container, navigate) {
             font-weight: 600;
             margin-bottom: 20px;
         }
+        /* --- NEW: Quick Access Styles --- */
+        .quick-access-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+        .qa-card {
+            background-color: rgba(30, 30, 30, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(128, 128, 128, 0.2);
+            border-radius: 16px;
+            padding: 20px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 500;
+            color: var(--primary-text-color);
+            transition: background-color 0.2s, transform 0.2s;
+        }
+        .qa-card:active {
+            transform: scale(0.95);
+        }
+        .qa-card:hover {
+            background-color: rgba(45, 45, 45, 0.8);
+        }
+        .qa-card span {
+            font-size: 2em;
+            line-height: 1;
+        }
+        /* --- End New Styles --- */
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr;
@@ -24,28 +60,22 @@ export function renderDashboard(container, navigate) {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
-
-        /* --- CARD STYLING UPDATES --- */
         .stat-card {
-            /* 1. Glass Effect */
             background-color: rgba(30, 30, 30, 0.65);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(128, 128, 128, 0.2);
             border-radius: 16px;
-            /* 2. Reduced Size */
             padding: 15px;
-            /* 3. Flex layout for icon */
             display: flex;
             align-items: center;
             gap: 15px;
         }
-
         .stat-icon {
             width: 24px;
             height: 24px;
             fill: #FFA500; /* Orange color for icons */
-            flex-shrink: 0; /* Prevents icon from shrinking */
+            flex-shrink: 0;
         }
         .stat-details {
             text-align: left;
@@ -62,26 +92,6 @@ export function renderDashboard(container, navigate) {
             color: var(--primary-text-color);
             line-height: 1.1;
         }
-
-        .tools-section {
-             margin-top: 30px;
-        }
-        .tool-card {
-            background-color: var(--surface-color);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .tool-card:active {
-             background-color: #2a2a2a;
-        }
-        .tool-card h2 { margin: 0; font-size: 1.1em; font-weight: 500; }
-        .tool-card .open-arrow { font-size: 1.2em; color: var(--accent-color); }
     `;
 
     // Inject styles for this page
@@ -89,9 +99,16 @@ export function renderDashboard(container, navigate) {
     styleElement.textContent = dashboardStyles;
     document.head.appendChild(styleElement);
 
-    // Render the HTML structure with new icons
+    // Render the HTML structure including the quick access section
     container.innerHTML = `
-        <div class="dashboard-wrapper">
+        <div class="dashboard-wrapper page-content-wrapper">
+            <!-- NEW: Quick Access Section -->
+            <div class="quick-access-grid">
+                <div class="qa-card" data-page="files"><span>📁</span> Files</div>
+                <div class="qa-card" data-page="browser"><span>🌐</span> Browser</div>
+                <div class="qa-card" data-page="titanzip"><span>📦</span> TitanZip</div>
+            </div>
+            
             <div class="header">
                 <h1>Activity</h1>
             </div>
@@ -133,20 +150,17 @@ export function renderDashboard(container, navigate) {
                     </div>
                 </div>
             </div>
-
-            <div class="tools-section">
-                <div class="header"><h1>Tools</h1></div>
-                <div class="tool-card" id="tool-titanzip">
-                    <h2>📁 Zip & Unzip</h2>
-                    <span class="open-arrow">&rarr;</span>
-                </div>
-            </div>
         </div>
     `;
 
-    // Add event listener to navigate to the tools
-    container.querySelector('#tool-titanzip').addEventListener('click', () => {
-        navigate('titanzip');
+    // Add event listeners to the new quick access cards
+    container.querySelectorAll('.qa-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            const page = e.currentTarget.dataset.page;
+            if (page) {
+                navigate(page);
+            }
+        });
     });
 }
 
