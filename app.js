@@ -28,7 +28,6 @@ async function navigate(page, data) {
             renderDashboard(appContainer, navigate);
             break;
         case 'files':
-            // Pass the current folder ID if available, otherwise default to root
             renderFilesPage(appContainer, navigate, data?.folderId);
             break;
         case 'editor':
