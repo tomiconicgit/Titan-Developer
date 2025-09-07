@@ -1,17 +1,11 @@
 // --- IndexedDB Logic for Local-First Storage ---
-
-const DB_NAME = 'fileSystemDB';
-const DB_VERSION = 1;
-
-/**
- * A manager for all IndexedDB interactions.
- */
-const IndexedDBManager = {
+// (This object needs to be exported so app.js can use it)
+export const IndexedDBManager = {
     db: null,
     async init() {
         return new Promise((resolve, reject) => {
             if (this.db) return resolve();
-            const request = indexedDB.open(DB_NAME, DB_VERSION);
+            const request = indexedDB.open('fileSystemDB', 1);
             request.onerror = e => reject("Error opening DB: " + e.target.error);
             request.onsuccess = e => { this.db = e.target.result; resolve(); };
             request.onupgradeneeded = e => {
@@ -53,26 +47,20 @@ const IndexedDBManager = {
 
 // --- Debouncer for Cloud Syncing ---
 let syncTimer;
-const SYNC_DELAY = 10 * 60 * 1000; // 10 minutes
+const SYNC_DELAY = 10 * 60 * 1000;
 
 function debouncedSync() {
     clearTimeout(syncTimer);
     syncTimer = setTimeout(async () => {
         console.log("--- SYNCING TO FIREBASE (Placeholder) ---");
-        // In a real scenario, you'd get all files where needsSync is true and send them.
     }, SYNC_DELAY);
 }
 
 // --- Page Rendering and UI Logic ---
+let currentFiles = [];
 
-let currentFiles = []; // Cache of files for quick access
-
-/**
- * Renders the files page and sets up all interactive elements.
- */
 export async function renderFilesPage(container, navigate) {
     await IndexedDBManager.init();
-
     container.innerHTML = `
         <div class="files-page-wrapper">
             <div class="top-controls">
@@ -86,42 +74,21 @@ export async function renderFilesPage(container, navigate) {
         </div>
     `;
     
-    // Inject styles for the page, modal, and context menu
     const styleElement = document.createElement('style');
     styleElement.textContent = `
-        /* Main Page Styles */
-        .files-page-wrapper { padding: 20px 15px; } .top-controls { display: flex; gap: 10px; margin-bottom: 25px; align-items: center; }
-        .action-btn { padding: 10px 15px; border-radius: 12px; border: none; background: #007AFF; color: white; cursor: pointer; font-weight: 500; }
-        .search-bar { flex-grow: 1; display: flex; align-items: center; gap: 10px; padding: 10px 15px; background-color: rgba(30, 30, 30, 0.75); backdrop-filter: blur(10px); border: 1px solid rgba(128, 128, 128, 0.2); border-radius: 12px; }
-        .search-bar svg { width: 18px; height: 18px; fill: #d1d1d1; } .search-input { width: 100%; background: transparent; border: none; outline: none; color: #fff; font-size: 1em; }
-        .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 25px 20px; }
-        .file-item { text-align: center; cursor: pointer; padding: 5px; border-radius: 8px; transition: background-color 0.2s; } .file-item:hover { background-color: rgba(255, 255, 255, 0.1); }
-        .file-icon-wrapper { width: 70px; height: 70px; margin: 0 auto 10px; display: flex; justify-content: center; align-items: center; }
-        .file-icon-img { max-width: 100%; max-height: 100%; object-fit: contain; } .file-name { font-size: 0.85em; color: #e3e3e3; font-weight: 500; margin: 0; word-break: break-all; } .file-meta { font-size: 0.75em; color: #888; margin-top: 4px; }
-        /* Modal Styles */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(5px); }
-        .modal-content { background: #2c2c2e; padding: 25px; border-radius: 16px; width: 90%; max-width: 400px; text-align: center; border: 1px solid #444; }
-        .modal-content h3 { margin-top: 0; margin-bottom: 20px; }
-        .modal-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #555; background: #3a3a3c; color: white; font-size: 1em; margin-bottom: 20px; box-sizing: border-box; }
-        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
-        .modal-btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; } .modal-btn.cancel { background: #555; color: white; } .modal-btn.create { background: #007AFF; color: white; }
-        /* Context Menu Styles */
-        .context-menu { position: absolute; z-index: 1001; background: #3a3a3c; border-radius: 8px; overflow: hidden; border: 1px solid #555; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        .context-menu ul { list-style: none; margin: 0; padding: 5px; } .context-menu li { padding: 10px 15px; cursor: pointer; color: #f0f0f0; }
-        .context-menu li:hover { background-color: #007AFF; } .context-menu li.delete { color: #ff5555; } .context-menu li.delete:hover { background: #ff5555; color: white; }
+        /* Main Page Styles */ .files-page-wrapper { padding: 20px 15px; } .top-controls { display: flex; gap: 10px; margin-bottom: 25px; align-items: center; } .action-btn { padding: 10px 15px; border-radius: 12px; border: none; background: #007AFF; color: white; cursor: pointer; font-weight: 500; } .search-bar { flex-grow: 1; display: flex; align-items: center; gap: 10px; padding: 10px 15px; background-color: rgba(30, 30, 30, 0.75); backdrop-filter: blur(10px); border: 1px solid rgba(128, 128, 128, 0.2); border-radius: 12px; } .search-bar svg { width: 18px; height: 18px; fill: #d1d1d1; } .search-input { width: 100%; background: transparent; border: none; outline: none; color: #fff; font-size: 1em; } .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 25px 20px; } .file-item { text-align: center; cursor: pointer; padding: 5px; border-radius: 8px; transition: background-color 0.2s; } .file-item:hover { background-color: rgba(255, 255, 255, 0.1); } .file-icon-wrapper { width: 70px; height: 70px; margin: 0 auto 10px; display: flex; justify-content: center; align-items: center; } .file-icon-img { max-width: 100%; max-height: 100%; object-fit: contain; } .file-name { font-size: 0.85em; color: #e3e3e3; font-weight: 500; margin: 0; word-break: break-all; } .file-meta { font-size: 0.75em; color: #888; margin-top: 4px; }
+        /* Modal Styles */ .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(5px); } .modal-content { background: #2c2c2e; padding: 25px; border-radius: 16px; width: 90%; max-width: 400px; text-align: center; border: 1px solid #444; } .modal-content h3 { margin-top: 0; margin-bottom: 20px; } .modal-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #555; background: #3a3a3c; color: white; font-size: 1em; margin-bottom: 20px; box-sizing: border-box; } .modal-actions { display: flex; gap: 10px; justify-content: flex-end; } .modal-btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; } .modal-btn.cancel { background: #555; color: white; } .modal-btn.create { background: #007AFF; color: white; }
+        /* Context Menu Styles */ .context-menu { position: absolute; z-index: 1001; background: #3a3a3c; border-radius: 8px; overflow: hidden; border: 1px solid #555; box-shadow: 0 5px 15px rgba(0,0,0,0.3); } .context-menu ul { list-style: none; margin: 0; padding: 5px; } .context-menu li { padding: 10px 15px; cursor: pointer; color: #f0f0f0; } .context-menu li:hover { background-color: #007AFF; } .context-menu li.delete { color: #ff5555; } .context-menu li.delete:hover { background: #ff5555; color: white; }
     `;
     document.head.appendChild(styleElement);
 
-    // Setup event listeners
-    container.querySelector('#add-file-btn').addEventListener('click', () => showCreateFileModal(container, navigate));
+    container.querySelector('#add-file-btn').addEventListener('click', () => showCreateFileModal(container));
+    // Pass the navigate function to the grid click handler
     container.querySelector('.file-grid').addEventListener('click', (e) => handleGridClick(e, navigate));
     
     await renderGridFromDB(container);
 }
 
-/**
- * Renders the grid of files from IndexedDB data.
- */
 async function renderGridFromDB(container) {
     currentFiles = await IndexedDBManager.getAllFiles();
     const grid = container.querySelector('.file-grid');
@@ -134,12 +101,9 @@ async function renderGridFromDB(container) {
     }
 }
 
-/**
- * Handles clicks within the file grid, delegating to show the context menu.
- */
 function handleGridClick(event, navigate) {
     const fileItem = event.target.closest('.file-item');
-    closeContextMenu(); // Close any existing menu
+    closeContextMenu();
     if (fileItem) {
         event.preventDefault();
         const fileId = fileItem.dataset.id;
@@ -150,10 +114,7 @@ function handleGridClick(event, navigate) {
     }
 }
 
-/**
- * Creates and displays the modal for creating a new file.
- */
-function showCreateFileModal(container, navigate) {
+function showCreateFileModal(container) {
     const modalHTML = `
         <div class="modal-overlay">
             <div class="modal-content">
@@ -167,12 +128,9 @@ function showCreateFileModal(container, navigate) {
         </div>
     `;
     document.body.insertAdjacentHTML('beforeend', modalHTML);
-
     const overlay = document.querySelector('.modal-overlay');
     const input = document.getElementById('new-filename-input');
-    
     const closeModal = () => overlay.remove();
-    
     overlay.querySelector('.cancel').addEventListener('click', closeModal);
     overlay.querySelector('.create').addEventListener('click', async () => {
         await handleCreateFile(input.value, container);
@@ -182,38 +140,29 @@ function showCreateFileModal(container, navigate) {
     input.focus();
 }
 
-/**
- * Logic to create a new file object and save it.
- */
 async function handleCreateFile(filename, container) {
     if (!filename || !filename.includes('.')) {
-        console.error("Invalid filename. Must include an extension."); // Replace with a proper UI alert later.
+        console.error("Invalid filename. Must include an extension.");
         return;
     }
-
     const name = filename;
     const type = name.split('.').pop();
-    
     const newFile = {
         id: `file-${Date.now()}`,
         name: name,
         type: type,
         meta: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
-        content: `// Welcome to ${name}\n`,
+        content: ``,
         needsSync: true
     };
-
     await IndexedDBManager.saveFile(newFile);
     await renderGridFromDB(container);
     debouncedSync();
 }
 
-/**
- * Displays a context menu for a given file at specific coordinates.
- */
 function showContextMenu(file, x, y, navigate) {
     const menuHTML = `
-        <div class="context-menu">
+        <div class="context-menu" style="top: ${y}px; left: ${x}px;">
             <ul>
                 <li data-action="edit">Code Editor</li>
                 <li data-action="rename">Rename</li>
@@ -225,27 +174,30 @@ function showContextMenu(file, x, y, navigate) {
     `;
     document.body.insertAdjacentHTML('beforeend', menuHTML);
     const menu = document.querySelector('.context-menu');
-    menu.style.top = `${y}px`;
-    menu.style.left = `${x}px`;
-
+    
     menu.addEventListener('click', async (e) => {
         const action = e.target.dataset.action;
         const appContainer = document.querySelector('.files-page-wrapper').parentElement;
+        closeContextMenu();
 
         switch (action) {
-            case 'edit': navigate('editor', file); break;
+            // --- THIS IS THE MOST IMPORTANT CHANGE ---
+            case 'edit':
+                // --- DEBUGGING: Confirm the edit action is firing ---
+                console.log('Edit action triggered for:', file.name);
+                navigate('editor', file); 
+                break;
             case 'delete': 
                 await IndexedDBManager.deleteFile(file.id);
                 await renderGridFromDB(appContainer);
                 break;
+            // Placeholders for other actions
             case 'rename': console.log("Rename action for:", file.name); break;
             case 'duplicate': console.log("Duplicate action for:", file.name); break;
             case 'move': console.log("Move action for:", file.name); break;
         }
-        closeContextMenu();
     });
 
-    // Close menu when clicking elsewhere
     setTimeout(() => {
         document.addEventListener('click', closeContextMenu, { once: true });
     }, 0);
@@ -256,17 +208,13 @@ function closeContextMenu() {
     if (menu) menu.remove();
 }
 
-
-/**
- * Generates the HTML string for a single file item.
- */
 function createFileItemHTML(file) {
-    let iconPath = 'icons/Photoroom_20250906_030640.png'; // Default icon
+    let iconPath = 'icons/Photoroom_20250906_030640.png'; // Default
     switch (file.type) {
         case 'folder': iconPath = 'icons/Photoroom_20250906_030913.png'; break;
         case 'html': case 'svg': iconPath = 'icons/Photoroom_20250906_030640.png'; break;
-        case 'css': iconPath = 'icons/Photoroom_20250906_030640.png'; break; // Placeholder
-        case 'json': iconPath = 'icons/Photoroom_20250906_030640.png'; break; // Placeholder
+        case 'css': iconPath = 'icons/css-icon.png'; break; // Using a more specific icon for example
+        case 'json': iconPath = 'icons/json-icon.png'; break;
         case 'txt': case 'md': case 'pdf': iconPath = 'icons/Photoroom_20250906_030557.png'; break;
         case 'js': iconPath = 'icons/Photoroom_20250906_030622.png'; break;
     }
@@ -276,4 +224,5 @@ function createFileItemHTML(file) {
                 <p class="file-meta">${file.meta}</p>
             </div>`;
 }
+
 
