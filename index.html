@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZIP Image Shrinker</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- JSZip library for handling zip files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        /* Custom styles for a better look */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .progress-bar {
+            transition: width 0.3s ease-in-out;
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-gray-200 flex items-center justify-center min-h-screen">
+
+    <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-lg mx-4">
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-white">ZIP Image Shrinker</h1>
+            <p class="text-gray-400 mt-2">Optimize images inside a .zip file, right in your browser.</p>
+        </div>
+
+        <!-- Step 1: File Upload -->
+        <div class="mb-6">
+            <label for="zip-file" class="block mb-2 text-sm font-medium text-gray-300">1. Upload your ZIP file</label>
+            <input type="file" id="zip-file" accept=".zip" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer"/>
+        </div>
+
+        <!-- Step 2: Settings -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+                <label for="max-size" class="block mb-2 text-sm font-medium text-gray-300">2. Max Image Size</label>
+                <input type="number" id="max-size" value="1024" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5" placeholder="e.g., 1024">
+                <p class="text-xs text-gray-500 mt-1">Longest side in pixels.</p>
+            </div>
+            <div>
+                <label for="quality" class="block mb-2 text-sm font-medium text-gray-300">3. JPG Quality (<span id="quality-value">80</span>%)</label>
+                <input type="range" id="quality" min="10" max="100" value="80" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+        </div>
+
+        <!-- Step 3: Action Button -->
+        <div class="mb-6">
+            <button id="process-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 disabled:bg-gray-600 disabled:cursor-not-allowed">
+                Shrink Images
+            </button>
+        </div>
+
+        <!-- Progress and Results -->
+        <div id="status-container" class="space-y-3 hidden">
+            <p id="status-text" class="text-center text-gray-400"></p>
+            <div class="w-full bg-gray-700 rounded-full h-2.5">
+                <div id="progress-bar" class="bg-indigo-600 h-2.5 rounded-full progress-bar" style="width: 0%"></div>
+            </div>
+            <div id="result-container" class="text-center pt-4"></div>
+        </div>
+    </div>
+
+    <script>
+        const zipFileInput = document.getElementById('zip-file');
+        const maxSizeInput = document.getElementById('max-size');
+        const qualityInput = document.getElementById('quality');
+        const qualityValue = document.getElementById('quality-value');
+        const processBtn = document.getElementById('process-btn');
+        const statusContainer = document.getElementById('status-container');
+        const statusText = document.getElementById('status-text');
+        const progressBar = document.getElementById('progress-bar');
+        const resultContainer = document.getElementById('result-container');
+
+        let selectedFile = null;
+        processBtn.disabled = true;
+
+        // --- Event Listeners ---
+
+        zipFileInput.addEventListener('change', (event) => {
+            selectedFile = event.target.files[0];
+            if (selectedFile) {
+                processBtn.disabled = false;
+                statusContainer.classList.add('hidden');
+                resultContainer.innerHTML = '';
+            } else {
+                processBtn.disabled = true;
+            }
+        });
+
+        qualityInput.addEventListener('input', (event) => {
+            qualityValue.textContent = event.target.value;
+        });
+
+        processBtn.addEventListener('click', async () => {
+            if (!selectedFile) {
+                alert('Please select a ZIP file first.');
+                return;
+            }
+            
+            // Disable UI during processing
+            processBtn.disabled = true;
+            statusContainer.classList.remove('hidden');
+            resultContainer.innerHTML = '';
+            
+            try {
+                await processZipFile(selectedFile);
+            } catch (error) {
+                console.error("Processing failed:", error);
+                updateStatus(`Error: ${error.message}`, 100, true);
+            } finally {
+                // Re-enable button
+                processBtn.disabled = false;
+            }
+        });
+        
+        // --- Core Logic ---
+
+        async function processZipFile(file) {
+            updateStatus('Reading ZIP file...', 5);
+            const zip = await JSZip.loadAsync(file);
+            
+            const imageFiles = [];
+            const imageExtensions = ['.png', '.jpg', '.jpeg', '.webp'];
+            zip.forEach((relativePath, zipEntry) => {
+                const lowerCasePath = relativePath.toLowerCase();
+                if (!zipEntry.dir && imageExtensions.some(ext => lowerCasePath.endsWith(ext))) {
+                    imageFiles.push(zipEntry);
+                }
+            });
+
+            if (imageFiles.length === 0) {
+                throw new Error("No supported image files found in the ZIP.");
+            }
+
+            const newZip = new JSZip();
+            const totalImages = imageFiles.length;
+
+            for (let i = 0; i < totalImages; i++) {
+                const imageFile = imageFiles[i];
+                const progress = 10 + (i / totalImages) * 80;
+                updateStatus(`Processing ${i + 1} of ${totalImages}: ${imageFile.name}`, progress);
+
+                try {
+                    const blob = await imageFile.async('blob');
+                    const resizedBlob = await resizeImage(blob, parseInt(maxSizeInput.value), parseInt(qualityInput.value) / 100);
+                    
+                    // Create a new filename with .jpg extension
+                    const originalName = imageFile.name.split('/').pop(); // Get filename from path
+                    const baseName = originalName.substring(0, originalName.lastIndexOf('.'));
+                    const newFileName = `${baseName}.jpg`;
+
+                    newZip.file(newFileName, resizedBlob);
+                } catch (imgError) {
+                    console.warn(`Skipping file ${imageFile.name} due to an error:`, imgError);
+                }
+            }
+
+            updateStatus('Repacking optimized ZIP...', 95);
+            const finalZipBlob = await newZip.generateAsync({ type: 'blob' });
+
+            updateStatus('Done! Your download is ready.', 100);
+            createDownloadLink(finalZipBlob);
+        }
+
+        function resizeImage(blob, maxSize, quality) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                const url = URL.createObjectURL(blob);
+                
+                img.onload = () => {
+                    let { width, height } = img;
+                    if (width > height) {
+                        if (width > maxSize) {
+                            height = Math.round(height * (maxSize / width));
+                            width = maxSize;
+                        }
+                    } else {
+                        if (height > maxSize) {
+                            width = Math.round(width * (maxSize / height));
+                            height = maxSize;
+                        }
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    canvas.toBlob(
+                        (resizedBlob) => {
+                            URL.revokeObjectURL(url);
+                            if (resizedBlob) {
+                                resolve(resizedBlob);
+                            } else {
+                                reject(new Error('Canvas toBlob failed.'));
+                            }
+                        },
+                        'image/jpeg',
+                        quality
+                    );
+                };
+
+                img.onerror = () => {
+                    URL.revokeObjectURL(url);
+                    reject(new Error('Failed to load image.'));
+                };
+                
+                img.src = url;
+            });
+        }
+
+        function createDownloadLink(blob) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'images-optimized.zip';
+            a.textContent = 'Download Optimized ZIP';
+            a.className = 'inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300';
+            resultContainer.innerHTML = '';
+            resultContainer.appendChild(a);
+
+            // Clean up the object URL when the link is clicked, although modern browsers are good at this.
+            a.onclick = () => {
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            };
+        }
+        
+        function updateStatus(message, percent, isError = false) {
+            statusText.textContent = message;
+            progressBar.style.width = `${percent}%`;
+            progressBar.classList.toggle('bg-red-600', isError);
+            progressBar.classList.toggle('bg-indigo-600', !isError);
+        }
+    </script>
+</body>
+</html>
+
+
